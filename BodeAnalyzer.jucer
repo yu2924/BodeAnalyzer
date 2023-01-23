@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="TjRUid" name="BodeAnalyzer" projectType="guiapp" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
+              bundleIdentifier="com.yu2924.BodeAnalyzer" companyName="yu2924">
+  <MAINGROUP id="xmYuif" name="BodeAnalyzer">
+    <GROUP id="{8E8B07C2-EA2E-CB5F-9E5A-80821B748489}" name="Source">
+      <FILE id="NLB8eX" name="AnalysisController.cpp" compile="1" resource="0"
+            file="Source/AnalysisController.cpp"/>
+      <FILE id="o2rENx" name="AnalysisController.h" compile="0" resource="0"
+            file="Source/AnalysisController.h"/>
+      <FILE id="PAG2c7" name="Application.cpp" compile="1" resource="0" file="Source/Application.cpp"/>
+      <FILE id="TMKuhG" name="Application.h" compile="0" resource="0" file="Source/Application.h"/>
+      <FILE id="E2xYBn" name="DeviceForm.cpp" compile="1" resource="0" file="Source/DeviceForm.cpp"/>
+      <FILE id="X99Ieo" name="DeviceForm.h" compile="0" resource="0" file="Source/DeviceForm.h"/>
+      <FILE id="dKo6Gi" name="LatencyProbeController.cpp" compile="1" resource="0"
+            file="Source/LatencyProbeController.cpp"/>
+      <FILE id="saRZfy" name="LatencyProbeController.h" compile="0" resource="0"
+            file="Source/LatencyProbeController.h"/>
+      <FILE id="ZpTHln" name="MagPhasePlotPane.cpp" compile="1" resource="0"
+            file="Source/MagPhasePlotPane.cpp"/>
+      <FILE id="VqULTL" name="MagPhasePlotPane.h" compile="0" resource="0"
+            file="Source/MagPhasePlotPane.h"/>
+      <FILE id="JmpbKi" name="MainWindow.cpp" compile="1" resource="0" file="Source/MainWindow.cpp"/>
+      <FILE id="QBY0l5" name="MainWindow.h" compile="0" resource="0" file="Source/MainWindow.h"/>
+      <FILE id="ZcH4cp" name="Plot2dPane.cpp" compile="1" resource="0" file="Source/Plot2dPane.cpp"/>
+      <FILE id="XyLCLD" name="Plot2dPane.h" compile="0" resource="0" file="Source/Plot2dPane.h"/>
+      <FILE id="sdHSLQ" name="ProgressiveSessionBase.h" compile="0" resource="0"
+            file="Source/ProgressiveSessionBase.h"/>
+      <FILE id="ZBtYfY" name="ProgressiveSessionDialog.cpp" compile="1" resource="0"
+            file="Source/ProgressiveSessionDialog.cpp"/>
+      <FILE id="LSCTtd" name="ProgressiveSessionDialog.h" compile="0" resource="0"
+            file="Source/ProgressiveSessionDialog.h"/>
+      <FILE id="c45VW7" name="ResponsePane.cpp" compile="1" resource="0"
+            file="Source/ResponsePane.cpp"/>
+      <FILE id="Z6b6JF" name="ResponsePane.h" compile="0" resource="0" file="Source/ResponsePane.h"/>
+      <FILE id="EEWzwA" name="SimpleFFT.h" compile="0" resource="0" file="Source/SimpleFFT.h"/>
+      <FILE id="WeZLC7" name="StimulusForm.cpp" compile="1" resource="0"
+            file="Source/StimulusForm.cpp"/>
+      <FILE id="wCTsD7" name="StimulusForm.h" compile="0" resource="0" file="Source/StimulusForm.h"/>
+    </GROUP>
+  </MAINGROUP>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_ASIO="1"/>
+  <EXPORTFORMATS>
+    <VS2022 targetFolder="Builds/VisualStudio2022">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="BodeAnalyzer" headerPath="D:\SDKs\ASIOSDK2.3.1\common"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="BodeAnalyzer" headerPath="D:\SDKs\ASIOSDK2.3.1\common"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_core" path="../../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_events" path="../../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../../SDKs/JUCE-7.0.4/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../../SDKs/JUCE-7.0.4/modules"/>
+      </MODULEPATHS>
+    </VS2022>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+  </MODULES>
+</JUCERPROJECT>
