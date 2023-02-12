@@ -109,7 +109,7 @@ namespace BAAPP
 			std::vector<std::complex<double> > TSP = uselogss
 				? getenerateLogSS(N, m)
 				: getenerateLinearSS(N, m);
-			// tsp: rfft(TSP)
+			// tsp: ifft(TSP)
 			std::vector<float>& tsp = stimulus;
 			{
 				tsp.resize(N, 0);
@@ -139,7 +139,7 @@ namespace BAAPP
 				fftd.Transform(true, TSPRESP.data());
 				for(int i = 0; i < N; ++i) TSPRESP[i] *= INVTSP[i];
 			}
-			// ir: rfft(TSPRES)
+			// ir: ifft(TSPRESP)
 			ir.resize(N);
 			{
 				std::vector<std::complex<double> > TMP = TSPRESP;
@@ -147,7 +147,7 @@ namespace BAAPP
 				for(int i = 0; i < N; ++i) ir[i] = (float)TMP[i].real();
 				std::rotate(ir.begin(), ir.begin() + rotateShift, ir.end());
 			}
-			// FR
+			// FR: fft(ir)
 			FR.resize(N);
 			{
 				for(int i = 0; i < N; ++i) FR[i] = { ir[i], 0 };
