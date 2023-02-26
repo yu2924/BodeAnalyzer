@@ -21,11 +21,12 @@
 #include "ProgressiveSessionDialog.h"
 //[/Headers]
 
-#include "StimulusForm.h"
+#include "IRStimulusForm.h"
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 namespace BAAPP {
+namespace IR {
 //[/MiscUserDefs]
 
 //==============================================================================
@@ -44,7 +45,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     titleLabel->setColour (juce::TextEditor::textColourId, juce::Colours::black);
     titleLabel->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
 
-    titleLabel->setBounds (8, 8, 104, 16);
+    titleLabel->setBounds (8, 8, 96, 16);
 
     irPlotPane.reset (new Plot2dPane());
     addAndMakeVisible (irPlotPane.get());
@@ -111,7 +112,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     lengthCombo->setBounds (224, 128, 80, 24);
 
     repeatCountLabel.reset (new juce::Label (juce::String(),
-                                             TRANS("Repeat")));
+                                             TRANS("Repeat Count")));
     addAndMakeVisible (repeatCountLabel.get());
     repeatCountLabel->setFont (juce::Font (15.00f, juce::Font::plain).withTypefaceStyle ("Regular"));
     repeatCountLabel->setJustificationType (juce::Justification::centredRight);
@@ -119,7 +120,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     repeatCountLabel->setColour (juce::TextEditor::textColourId, juce::Colours::black);
     repeatCountLabel->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
 
-    repeatCountLabel->setBounds (312, 128, 63, 24);
+    repeatCountLabel->setBounds (312, 128, 96, 24);
 
     repeatCountEdit.reset (new juce::Label (juce::String(),
                                             juce::String()));
@@ -133,7 +134,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     repeatCountEdit->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
     repeatCountEdit->addListener (this);
 
-    repeatCountEdit->setBounds (376, 128, 64, 24);
+    repeatCountEdit->setBounds (408, 128, 64, 24);
 
     startButton.reset (new juce::TextButton (juce::String()));
     addAndMakeVisible (startButton.get());
@@ -154,11 +155,12 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     startButton->onClick = [this]() { onStartButtonClick(); };
     //[/UserPreSize]
 
-    setSize (640, 160);
+    setSize (640, 168);
 
 
     //[Constructor] You can add your own custom stuff here..
-    currentSampleRate = analysisController->getCurrentSampleRate();
+    juce::AudioIODevice* dev = audioDeviceManager->getCurrentAudioDevice();
+    currentSampleRate = dev ? dev->getCurrentSampleRate() : 44100;
     refrectProperties();
     audioDeviceManager->addChangeListener(this);
     analysisController->addChangeListener(this);
@@ -212,11 +214,11 @@ void StimulusForm::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    irPlotPane->setBounds (8, 24, getWidth() - 116, 104);
-    methodImpButton->setBounds (getWidth() - 8 - 96, 24, 96, 24);
-    methodLinSSButton->setBounds (getWidth() - 8 - 96, 48, 96, 24);
-    methodLogSSButton->setBounds (getWidth() - 8 - 96, 72, 96, 24);
-    startButton->setBounds (getWidth() - 8 - 96, 128, 96, 24);
+    irPlotPane->setBounds (8, 24, getWidth() - 120, 104);
+    methodImpButton->setBounds (getWidth() - 16 - 96, 24, 96, 24);
+    methodLinSSButton->setBounds (getWidth() - 16 - 96, 48, 96, 24);
+    methodLogSSButton->setBounds (getWidth() - 16 - 96, 72, 96, 24);
+    startButton->setBounds (getWidth() - 16 - 96, 128, 96, 24);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
@@ -268,9 +270,11 @@ void StimulusForm::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
     if(source == audioDeviceManager)
     {
-        if(currentSampleRate != analysisController->getCurrentSampleRate())
+        juce::AudioIODevice* dev = audioDeviceManager->getCurrentAudioDevice();
+        double fs = dev ? dev->getCurrentSampleRate() : 44100;
+        if(currentSampleRate != fs)
         {
-            currentSampleRate = analysisController->getCurrentSampleRate();
+            currentSampleRate = fs;
             refrectProperties();
         }
     }
@@ -299,7 +303,7 @@ void StimulusForm::progressiveSessionEnd(ProgressiveSessionBase* ps, const juce:
 
 void StimulusForm::refrectProperties()
 {
-    double fs = analysisController->getCurrentSampleRate();
+    double fs = currentSampleRate;
     const AnalysisController::Parameters& params = analysisController->getParameters();
     // plot
     const std::vector<float>& stimulus = analysisController->getStimulus();
@@ -355,7 +359,7 @@ void StimulusForm::onRepeatCountEditChnage()
 
 void StimulusForm::onStartButtonClick()
 {
-    juce::Result r = analysisController->startSession();
+    juce::Result r = analysisController->startProgressiveSession();
     if(r.wasOk()) progressiveSessionDialogShowAsync(analysisController.get(), "now measuring...");
     else juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "ERROR", r.getErrorMessage());
 }
@@ -377,24 +381,24 @@ BEGIN_JUCER_METADATA
                  constructorParams="juce::AudioDeviceManager* adm, AnalysisController* ac"
                  variableInitialisers="audioDeviceManager(adm), analysisController(ac)"
                  snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330"
-                 fixedSize="0" initialWidth="640" initialHeight="160">
+                 fixedSize="0" initialWidth="640" initialHeight="168">
   <BACKGROUND backgroundColour="ffffffff"/>
   <LABEL name="" id="cfb76c1374e76240" memberName="titleLabel" virtualName=""
-         explicitFocusOrder="0" pos="8 8 104 16" edTextCol="ff000000"
-         edBkgCol="0" labelText="Stimulus" editableSingleClick="0" editableDoubleClick="0"
+         explicitFocusOrder="0" pos="8 8 96 16" edTextCol="ff000000" edBkgCol="0"
+         labelText="Stimulus" editableSingleClick="0" editableDoubleClick="0"
          focusDiscardsChanges="0" fontname="Default font" fontsize="15.0"
          kerning="0.0" bold="1" italic="0" justification="33" typefaceStyle="Bold"/>
   <GENERICCOMPONENT name="" id="83ee5810795a7a2" memberName="irPlotPane" virtualName=""
-                    explicitFocusOrder="0" pos="8 24 116M 104" class="Plot2dPane"
+                    explicitFocusOrder="0" pos="8 24 120M 104" class="Plot2dPane"
                     params=""/>
   <TOGGLEBUTTON name="" id="7110fa476e68cdd" memberName="methodImpButton" virtualName=""
-                explicitFocusOrder="0" pos="8Rr 24 96 24" buttonText="Impulse"
+                explicitFocusOrder="0" pos="16Rr 24 96 24" buttonText="Impulse"
                 connectedEdges="0" needsCallback="0" radioGroupId="1" state="0"/>
   <TOGGLEBUTTON name="" id="ace919d0b87fc543" memberName="methodLinSSButton"
-                virtualName="" explicitFocusOrder="0" pos="8Rr 48 96 24" buttonText="Linear SS"
+                virtualName="" explicitFocusOrder="0" pos="16Rr 48 96 24" buttonText="Linear SS"
                 connectedEdges="0" needsCallback="0" radioGroupId="1" state="0"/>
   <TOGGLEBUTTON name="" id="8ad28d2b343dbe2a" memberName="methodLogSSButton"
-                virtualName="" explicitFocusOrder="0" pos="8Rr 72 96 24" buttonText="Log SS"
+                virtualName="" explicitFocusOrder="0" pos="16Rr 72 96 24" buttonText="Log SS"
                 connectedEdges="0" needsCallback="0" radioGroupId="1" state="0"/>
   <LABEL name="" id="117a0a7778f7a676" memberName="amplitudeLabel" virtualName=""
          explicitFocusOrder="0" pos="8 128 80 24" edTextCol="ff000000"
@@ -415,18 +419,18 @@ BEGIN_JUCER_METADATA
             explicitFocusOrder="0" pos="224 128 80 24" editable="0" layout="33"
             items="" textWhenNonSelected="" textWhenNoItems="(no choices)"/>
   <LABEL name="" id="665de043b8f2a224" memberName="repeatCountLabel" virtualName=""
-         explicitFocusOrder="0" pos="312 128 63 24" edTextCol="ff000000"
-         edBkgCol="0" labelText="Repeat" editableSingleClick="0" editableDoubleClick="0"
-         focusDiscardsChanges="0" fontname="Default font" fontsize="15.0"
-         kerning="0.0" bold="0" italic="0" justification="34"/>
+         explicitFocusOrder="0" pos="312 128 96 24" edTextCol="ff000000"
+         edBkgCol="0" labelText="Repeat Count" editableSingleClick="0"
+         editableDoubleClick="0" focusDiscardsChanges="0" fontname="Default font"
+         fontsize="15.0" kerning="0.0" bold="0" italic="0" justification="34"/>
   <LABEL name="" id="f58a9627fbca840c" memberName="repeatCountEdit" virtualName=""
-         explicitFocusOrder="0" pos="376 128 64 24" bkgCol="ffffffff"
+         explicitFocusOrder="0" pos="408 128 64 24" bkgCol="ffffffff"
          outlineCol="ffdddddd" edTextCol="ff000000" edBkgCol="0" labelText=""
          editableSingleClick="1" editableDoubleClick="1" focusDiscardsChanges="0"
          fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
          italic="0" justification="34"/>
   <TEXTBUTTON name="" id="bd896244a95b0ca4" memberName="startButton" virtualName=""
-              explicitFocusOrder="0" pos="8Rr 128 96 24" buttonText="Start"
+              explicitFocusOrder="0" pos="16Rr 128 96 24" buttonText="Start"
               connectedEdges="0" needsCallback="0" radioGroupId="0"/>
 </JUCER_COMPONENT>
 
@@ -436,6 +440,7 @@ END_JUCER_METADATA
 
 
 //[EndFile] You can add extra defines here...
+} // namespace IR
 } // namespace BAAPP
 //[/EndFile]
 

@@ -8,8 +8,9 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "AnalysisController.h"
 #include "LatencyProbeController.h"
+#include "IRAnalysisController.h"
+#include "STAnalysisController.h"
 
 namespace BAAPP
 {
@@ -19,8 +20,9 @@ namespace BAAPP
 	public:
 		std::unique_ptr<juce::PropertiesFile> propertiesFile;
 		std::unique_ptr < juce::AudioDeviceManager> audioDeviceManager;
-		AnalysisController::Ptr analysisController;
 		LatencyProbeController::Ptr latencyProbeController;
+		IR::AnalysisController::Ptr irAnalysisController;
+		ST::AnalysisController::Ptr stAnalysisController;
 	protected:
 		BodeAnalyzerApplication() {}
 	};

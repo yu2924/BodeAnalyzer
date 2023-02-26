@@ -1,6 +1,6 @@
 //
 //  SimpleFFT.h
-// // generic implementation
+//  generic implementation
 //
 //  created by yu2924 on 2023-01-23
 //
@@ -33,11 +33,11 @@ public:
 		mLength = mStage = 0;
 		if(l)
 		{
-			mLength = 1; mStage = 0; while(mLength < l) { mLength <<= 1; mStage++; }
+			mLength = 1; mStage = 0; while(mLength < l) { mLength <<= 1; ++mStage; }
 			mCosT.resize(mLength / 2 + 1);
 			mSinT.resize(mLength / 2 + 1);
 			T w = 0, dw = TWOPI / (T)mLength;
-			for(size_t i = 0; i <= mLength / 2; i++, w += dw) { mSinT[i] = sin(w); mCosT[i] = cos(w); }
+			for(size_t i = 0; i <= mLength / 2; ++i, w += dw) { mSinT[i] = sin(w); mCosT[i] = cos(w); }
 		}
 		return mLength;
 	}
@@ -50,13 +50,13 @@ public:
 		l = mLength; h = 1;
 		if(forward)
 		{
-			for(g = 0; g < mStage; g++)
+			for(g = 0; g < mStage; ++g)
 			{
 				l = l / 2; k = 0;
-				for(q = 0; q < h; q++)
+				for(q = 0; q < h; ++q)
 				{
 					p = 0;
-					for(i = k; i < k + l; i++)
+					for(i = k; i < k + l; ++i)
 					{
 						j = i + l;
 						c = pc[i] - pc[j];
@@ -77,13 +77,13 @@ public:
 		}
 		else
 		{
-			for(g = 0; g < mStage; g++)
+			for(g = 0; g < mStage; ++g)
 			{
 				l = l / 2; k = 0;
-				for(q = 0; q < h; q++)
+				for(q = 0; q < h; ++q)
 				{
 					p = 0;
-					for(i = k; i < k + l; i++)
+					for(i = k; i < k + l; ++i)
 					{
 						j = i + l;
 						c = pc[i] - pc[j];
@@ -104,7 +104,7 @@ public:
 		}
 		// bit reversal
 		j = mLength / 2;
-		for(i = 1; i < mLength - 1; i++)
+		for(i = 1; i < mLength - 1; ++i)
 		{
 			k = mLength;
 			if(j < i)
@@ -123,7 +123,7 @@ public:
 		if(!forward)
 		{
 			T scale = 1 / (T)mLength;
-			for(i = 0; i < mLength; i++)
+			for(i = 0; i < mLength; ++i)
 			{
 				pc[i] *= scale;
 				// pr[i] *= scale;
@@ -140,13 +140,13 @@ public:
 		l = mLength; h = 1;
 		if(forward)
 		{
-			for(g = 0; g < mStage; g++)
+			for(g = 0; g < mStage; ++g)
 			{
 				l = l / 2; k = 0;
-				for(q = 0; q < h; q++)
+				for(q = 0; q < h; ++q)
 				{
 					p = 0;
-					for(i = k; i < k + l; i++)
+					for(i = k; i < k + l; ++i)
 					{
 						j = i + l;
 						// c = pc[i] - pc[j];
@@ -167,13 +167,13 @@ public:
 		}
 		else
 		{
-			for(g = 0; g < mStage; g++)
+			for(g = 0; g < mStage; ++g)
 			{
 				l = l / 2; k = 0;
-				for(q = 0; q < h; q++)
+				for(q = 0; q < h; ++q)
 				{
 					p = 0;
-					for(i = k; i < k + l; i++)
+					for(i = k; i < k + l; ++i)
 					{
 						j = i + l;
 						// c = pc[i] - pc[j];
@@ -194,7 +194,7 @@ public:
 		}
 		// bit reversal
 		j = mLength / 2;
-		for(i = 1; i < mLength - 1; i++)
+		for(i = 1; i < mLength - 1; ++i)
 		{
 			k = mLength;
 			if(j < i)
@@ -213,7 +213,7 @@ public:
 		if(!forward)
 		{
 			T scale = 1 / (T)mLength;
-			for(i = 0; i < mLength; i++)
+			for(i = 0; i < mLength; ++i)
 			{
 				// pc[i] *= scale;
 				pr[i] *= scale;

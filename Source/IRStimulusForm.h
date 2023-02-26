@@ -21,9 +21,10 @@
 
 //[Headers]     -- You can add your own extra header files here --
 #include <JuceHeader.h>
-#include "AnalysisController.h"
+#include "IRAnalysisController.h"
 #include "Plot2dPane.h"
 namespace BAAPP {
+namespace IR {
 //[/Headers]
 
 
@@ -97,6 +98,7 @@ private:
 };
 
 //[EndFile] You can add extra defines here...
+} // namespace IR
 } // namespace BAAPP
 //[/EndFile]
 

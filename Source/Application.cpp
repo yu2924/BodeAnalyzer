@@ -14,7 +14,7 @@ namespace BAAPP
 	class BodeAnalyzerApplicationImpl : public BodeAnalyzerApplication, public juce::ChangeListener
 	{
 	private:
-		std::unique_ptr<juce::Component> mainWindow;
+		std::unique_ptr<MainWindow> mainWindow;
 	public:
 		BodeAnalyzerApplicationImpl() {}
 		virtual const juce::String getApplicationName() override { return ProjectInfo::projectName; }
@@ -38,31 +38,50 @@ namespace BAAPP
 			std::unique_ptr<juce::XmlElement> audiosettings = propertiesFile->getXmlValue("AudioSettings");
 			if(audiosettings) audioDeviceManager->initialise(1, 1, audiosettings.get(), true);
 			else audioDeviceManager->initialiseWithDefaultDevices(1, 1);
-			// analysisController
-			analysisController = AnalysisController::createInstance(audioDeviceManager.get());
-			AnalysisController::Parameters params = {};
-			params.method = (AnalysisController::Method)propertiesFile->getIntValue("Method", AnalysisController::Method::MethodLogSS);
-			params.order = propertiesFile->getIntValue("Order", 16);
-			params.amplitude = (float)propertiesFile->getDoubleValue("Amplitude", 0.5f);
-			params.repeatCount = propertiesFile->getIntValue("RepeatCount", 1);
-			analysisController->setParameters(params);
-			analysisController->setRoundTripLatency(propertiesFile->getIntValue("RoundTripLatency", 0));
 			// latencyProbeController
 			latencyProbeController = LatencyProbeController::createInstance(audioDeviceManager.get());
 			latencyProbeController->setProbeAmplitude((float)propertiesFile->getDoubleValue("ProbeAmplitude", 0.5));
 			latencyProbeController->setProbeLength(propertiesFile->getIntValue("ProbeLength", 4096));
+			int roundtriplatency = propertiesFile->getIntValue("RoundtripLatency", 0);
+			latencyProbeController->setRoundtripLatency(roundtriplatency);
+			// irAnalysisController
+			irAnalysisController = IR::AnalysisController::createInstance(audioDeviceManager.get());
+			IR::AnalysisController::Parameters fparams = {};
+			fparams.method = (IR::AnalysisController::Method)propertiesFile->getIntValue("IR-Method", IR::AnalysisController::Method::MethodLogSS);
+			fparams.order = propertiesFile->getIntValue("IR-Order", 16);
+			fparams.amplitude = (float)propertiesFile->getDoubleValue("IR-Amplitude", 0.5);
+			fparams.repeatCount = propertiesFile->getIntValue("IR-RepeatCount", 1);
+			irAnalysisController->setParameters(fparams);
+			irAnalysisController->setRoundtripLatency(roundtriplatency);
+			// stAnalysisController
+			stAnalysisController = ST::AnalysisController::createInstance(audioDeviceManager.get());
+			ST::AnalysisController::Parameters sparams = {};
+			sparams.freqMinHz = propertiesFile->getDoubleValue("ST-FreqMin", 20);
+			sparams.freqMaxHz = propertiesFile->getDoubleValue("ST-FreqMax", 20000);
+			sparams.numPoints = propertiesFile->getIntValue("ST-NumPoints", 88);
+			sparams.amplitude = (float)propertiesFile->getDoubleValue("ST-Amplitude", 0.5);
+			sparams.repeatCount = propertiesFile->getIntValue("ST-RepeatCount", 1);
+			sparams.logarithmic = propertiesFile->getBoolValue("ST-Logarithmic", true);
+			stAnalysisController->setParameters(sparams);
+			stAnalysisController->setRoundtripLatency(roundtriplatency);
 			// mainWindow
-			mainWindow.reset(MainWindowCreateInstance(getApplicationName(), audioDeviceManager.get(), analysisController.get(), latencyProbeController.get()));
+			mainWindow.reset(MainWindow::createInstance(getApplicationName(), audioDeviceManager.get(), latencyProbeController.get(), irAnalysisController.get(), stAnalysisController.get()));
+			mainWindow->setActiveScheme(propertiesFile->getIntValue("ActiveScheme", 0), juce::dontSendNotification);
 			// startup
 			audioDeviceManager->addChangeListener(this);
-			analysisController->addChangeListener(this);
 			latencyProbeController->addChangeListener(this);
+			irAnalysisController->addChangeListener(this);
+			stAnalysisController->addChangeListener(this);
+			mainWindow->addChangeListener(this);
 		}
 		virtual void shutdown() override
 		{
+			mainWindow->removeChangeListener(this);
+			stAnalysisController->removeChangeListener(this);
+			irAnalysisController->removeChangeListener(this);
 			latencyProbeController->removeChangeListener(this);
-			analysisController->removeChangeListener(this);
 			audioDeviceManager->removeChangeListener(this);
+			propertiesFile->saveIfNeeded();
 			mainWindow = nullptr;
 		}
 		virtual void systemRequestedQuit() override
@@ -79,19 +98,36 @@ namespace BAAPP
 				std::unique_ptr<juce::XmlElement> audiosettings = audioDeviceManager->createStateXml();
 				if(audiosettings) propertiesFile->setValue("AudioSettings", audiosettings.get());
 			}
-			else if(source == analysisController.get())
-			{
-				const AnalysisController::Parameters& params = analysisController->getParameters();
-				propertiesFile->setValue("Method", params.method);
-				propertiesFile->setValue("Order", params.order);
-				propertiesFile->setValue("Amplitude", params.amplitude);
-				propertiesFile->setValue("RepeatCount", params.repeatCount);
-				propertiesFile->setValue("RoundTripLatency", analysisController->getRoundTripLatency());
-			}
 			else if(source == latencyProbeController.get())
 			{
 				propertiesFile->setValue("ProbeAmplitude", latencyProbeController->getProbeAmplitude());
 				propertiesFile->setValue("ProbeLength", latencyProbeController->getProbeLength());
+				int roundtriplatency = latencyProbeController->getRoundtripLatency();
+				propertiesFile->setValue("RoundtripLatency", roundtriplatency);
+				irAnalysisController->setRoundtripLatency(roundtriplatency);
+				stAnalysisController->setRoundtripLatency(roundtriplatency);
+			}
+			else if(source == irAnalysisController.get())
+			{
+				const IR::AnalysisController::Parameters& params = irAnalysisController->getParameters();
+				propertiesFile->setValue("IR-Method", params.method);
+				propertiesFile->setValue("IR-Order", params.order);
+				propertiesFile->setValue("IR-Amplitude", params.amplitude);
+				propertiesFile->setValue("IR-RepeatCount", params.repeatCount);
+			}
+			else if(source == stAnalysisController.get())
+			{
+				const ST::AnalysisController::Parameters& params = stAnalysisController->getParameters();
+				propertiesFile->setValue("ST-FreqMin", params.freqMinHz);
+				propertiesFile->setValue("ST-FreqMax", params.freqMaxHz);
+				propertiesFile->setValue("ST-NumPoints", params.numPoints);
+				propertiesFile->setValue("ST-Amplitude", params.amplitude);
+				propertiesFile->setValue("ST-RepeatCount", params.repeatCount);
+				propertiesFile->setValue("ST-Logarithmic", params.logarithmic);
+			}
+			else if(source == mainWindow.get())
+			{
+				propertiesFile->setValue("ActiveScheme", mainWindow->getActiveScheme());
 			}
 		}
 	};

@@ -74,12 +74,14 @@ namespace BAAPP
 		};
 		juce::AudioDeviceManager* audioDeviceManager;
 		int probeLength = 4096;
-		float probeAmplitude = 0.5f;
-		int resultLatency = 0;
+		float probeAmplitude = 1;
+		int roundtripLatency = 0;
 		CorrelationBuffer correlationBuffer;
 		bool sessionRunning = false;
 		LatencyProbeControllerImpl(juce::AudioDeviceManager* adm) : audioDeviceManager(adm)
 		{
+			auto dev = audioDeviceManager->getCurrentAudioDevice();
+			roundtripLatency = dev ? std::max(0, dev->getInputLatencyInSamples() + dev->getOutputLatencyInSamples()) : 0;
 		}
 		virtual ~LatencyProbeControllerImpl()
 		{
@@ -102,14 +104,21 @@ namespace BAAPP
 		}
 		virtual void setProbeAmplitude(float v) override
 		{
-			probeAmplitude = std::max(0.0f, v);
+			probeAmplitude = std::max(1e-3f, v);
 			sendChangeMessage();
 		}
-		virtual int getResultLatency() const override
+		virtual int getRoundtripLatency() const override
 		{
-			return resultLatency;
+			return roundtripLatency;
 		}
-		virtual juce::Result startSession() override
+		virtual void setRoundtripLatency(int v) override
+		{
+			roundtripLatency = std::max(0, v);
+			sendChangeMessage();
+		}
+		// --------------------------------------------------------------------------------
+		// ProgressiveSessionBase
+		virtual juce::Result startProgressiveSession() override
 		{
 			if(sessionRunning) return juce::Result::fail("session still running");
 			auto dev = audioDeviceManager->getCurrentAudioDevice();
@@ -122,16 +131,6 @@ namespace BAAPP
 			audioDeviceManager->addAudioCallback(this);
 			return juce::Result::ok();
 		}
-		// --------------------------------------------------------------------------------
-		// ProgressiveSessionBase
-		virtual bool isProgressiveSessionRunning() const override
-		{
-			return sessionRunning;
-		}
-		virtual double getProgressiveSessionProgress() const override
-		{
-			return correlationBuffer.getProgressPosition();
-		}
 		virtual void abortProgressiveSession() override
 		{
 			juce::MessageManager::callAsync([this]()
@@ -142,6 +141,14 @@ namespace BAAPP
 				audioDeviceManager->removeAudioCallback(this);
 				callProgressiveSessionEnd(juce::Result::fail("aborted"), true);
 			});
+		}
+		virtual bool isProgressiveSessionRunning() const override
+		{
+			return sessionRunning;
+		}
+		virtual double getProgressiveSessionProgress() const override
+		{
+			return correlationBuffer.getProgressPosition();
 		}
 		// --------------------------------------------------------------------------------
 		// juce::AudioIODeviceCallback
@@ -157,9 +164,10 @@ namespace BAAPP
 					if(!sessionRunning) return;
 					// endsession case: succeeded
 					sessionRunning = false;
-					resultLatency = correlationBuffer.findDelay();
+					roundtripLatency = correlationBuffer.findDelay();
 					audioDeviceManager->removeAudioCallback(this);
 					callProgressiveSessionEnd(juce::Result::ok(), false);
+					sendChangeMessage();
 				});
 			}
 		}

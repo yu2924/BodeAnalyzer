@@ -21,8 +21,9 @@
 
 //[Headers]     -- You can add your own extra header files here --
 #include <JuceHeader.h>
-#include "LatencyProbeController.h"
+#include "STAnalysisController.h"
 namespace BAAPP {
+namespace ST {
 //[/Headers]
 
 
@@ -35,31 +36,30 @@ namespace BAAPP {
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class DeviceForm  : public juce::Component,
-                    public juce::ChangeBroadcaster,
-                    public juce::ChangeListener,
-                    public ProgressiveSessionBase::Listener,
-                    public juce::Label::Listener
+class StimulusForm  : public juce::Component,
+                      public juce::ChangeListener,
+                      public ProgressiveSessionBase::Listener,
+                      public juce::Label::Listener
 {
 public:
     //==============================================================================
-    DeviceForm (juce::AudioDeviceManager* adm, LatencyProbeController* lpc);
-    ~DeviceForm() override;
+    StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* ac);
+    ~StimulusForm() override;
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
     // ChangeListener
     virtual void changeListenerCallback(juce::ChangeBroadcaster* source) override;
     // ProgressiveSessionBase::Listener
-    virtual void progressiveSessionEnd(ProgressiveSessionBase*, const juce::Result& r, bool aborted) override;
+    virtual void progressiveSessionEnd(ProgressiveSessionBase*, const juce::Result&, bool) override;
     // internal
-    void reflectProperties();
-    void onConfigureButtonClick();
-    void onReopenButtonClick();
-    void onRoundTripLatencyEditChange();
-    void onProbeAmplitudeEditChange();
-    void onProbeLengthEditChange();
-    void onProbeDetectButtonClick();
+    void refrectProperties();
+    void onFreqRangeEditChange();
+    void onNumPointsEditChange();
+    void onAmplitudeEditChange();
+    void onRepeatCountEditChange();
+    void onLogCheckClick();
+    void onStartButtonClick();
     //[/UserMethods]
 
     void paint (juce::Graphics& g) override;
@@ -71,28 +71,32 @@ public:
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     juce::AudioDeviceManager* audioDeviceManager;
-    LatencyProbeController::Ptr latencyProbeController;
+    AnalysisController::Ptr analysisController;
     //[/UserVariables]
 
     //==============================================================================
     std::unique_ptr<juce::Label> titleLabel;
-    std::unique_ptr<juce::TextButton> configureButton;
-    std::unique_ptr<juce::TextButton> reopenButton;
-    std::unique_ptr<juce::Label> roundTripLatencyLabel;
-    std::unique_ptr<juce::Label> roundTripLatencyEdit;
-    std::unique_ptr<juce::GroupComponent> probeGroup;
-    std::unique_ptr<juce::Label> probeAmplitudeLabel;
-    std::unique_ptr<juce::Label> probeAmplitudeEdit;
-    std::unique_ptr<juce::Label> probeLengthLabel;
-    std::unique_ptr<juce::Label> probeLengthEdit;
-    std::unique_ptr<juce::TextButton> probeDetectButton;
+    std::unique_ptr<juce::Label> freqRangeLabel;
+    std::unique_ptr<juce::Label> freqMinLabel;
+    std::unique_ptr<juce::Label> freqMinEdit;
+    std::unique_ptr<juce::Label> freqMaxLabel;
+    std::unique_ptr<juce::Label> freqMaxEdit;
+    std::unique_ptr<juce::Label> numPointsLabel;
+    std::unique_ptr<juce::Label> numPointsEdit;
+    std::unique_ptr<juce::ToggleButton> logCheck;
+    std::unique_ptr<juce::Label> amplitudeLabel;
+    std::unique_ptr<juce::Label> amplitudeEdit;
+    std::unique_ptr<juce::Label> repeatCountLabel;
+    std::unique_ptr<juce::Label> repeatCountEdit;
+    std::unique_ptr<juce::TextButton> startButton;
 
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DeviceForm)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StimulusForm)
 };
 
 //[EndFile] You can add extra defines here...
+} // namespace ST
 } // namespace BAAPP
 //[/EndFile]
 

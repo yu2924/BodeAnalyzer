@@ -12,68 +12,6 @@
 // ================================================================================
 // helpers
 
-struct SN10
-{
-	static SN10 Ceil(float v)
-	{
-		SN10 sn((int)std::log10(v));
-		while(sn < v) sn = sn.Next();
-		return sn;
-	}
-	static SN10 Floor(float v)
-	{
-		SN10 sn = Ceil(v);
-		while(v < sn) sn = sn.Prev();
-		return sn;
-	}
-	int x; // exponent, value=10^x
-	SN10(int rx = 0) { x = rx; }
-	SN10(const SN10& r) { x = r.x; }
-	SN10& operator=(const SN10& r) { x = r.x; return *this; }
-	SN10 Next() const { return SN10(x + 1); }
-	SN10 Prev() const { return SN10(x - 1); }
-	operator float() const { return std::pow(10.0f, (float)x); }
-};
-
-struct SN125
-{
-	static SN125 Ceil(float v)
-	{
-		SN125 sn(1, (int)std::log10(v));
-		while(sn < v) sn = sn.Next();
-		return sn;
-	}
-	static SN125 Floor(float v)
-	{
-		SN125 sn = Ceil(v);
-		while(v < sn) sn = sn.Prev();
-		return sn;
-	}
-	int m, x; // mantissa,exponent; value=m*10^x
-	SN125(int rm = 1, int rx = 0) { m = rm; x = rx; }
-	SN125(const SN125& r) { m = r.m; x = r.x; }
-	SN125& operator=(const SN125& r) { m = r.m; x = r.x; return *this; }
-	int Mantissa() const { return m; }
-	SN125 Next() const
-	{
-		if(m == 1) return SN125(2, x);
-		else if(m == 2) return SN125(5, x);
-		else if(m == 5) return SN125(1, x + 1);
-		else return SN125::Ceil((float)*this); // unexpected
-	}
-	SN125 Prev() const
-	{
-		if(m == 1) return SN125(5, x - 1);
-		else if(m == 2) return SN125(1, x);
-		else if(m == 5) return SN125(2, x);
-		else return SN125::Floor((float)*this); // unexpected
-	}
-	operator float() const
-	{
-		return (float)m * std::pow(10.0f, (float)x);
-	}
-};
-
 class MapBase : public juce::ReferenceCountedObject
 {
 public:
@@ -206,6 +144,7 @@ public:
 		float fontascent = mFont.getAscent();
 		int textheight = juce::roundToInt(fontheight + 0.5f);
 		static const float dash[] = { 2, 2 };
+		juce::Colour mingridcolor = mGridColor.interpolatedWith(mBackColor, 0.5f);
 		// x labels & grids
 		{
 			Range rng = mAxisX.range.normalized();
@@ -241,12 +180,12 @@ public:
 				if(mAxisX.tickFlags & Minor)
 				{
 					g.setColour(mTickColor);
-					g.drawLine({ xtick, (float)rcf.getBottom(), xtick, (float)rcf.getBottom() + fontheight * 0.4f }, 1);
+					g.drawLine({ xtick, (float)rcf.getBottom(), xtick, (float)rcf.getBottom() + fontheight * 0.2f }, 1);
 				}
 				// grid
 				if((mAxisX.gridFlags & Minor) && (v != rng.lval) && (v != rng.hval))
 				{
-					g.setColour(mGridColor);
+					g.setColour(mingridcolor);
 					g.drawDashedLine({ xtick, (float)rcf.getY(), xtick, (float)rcf.getBottom() }, dash, 2, 1, 0);
 				}
 				// tick label
@@ -303,7 +242,7 @@ public:
 				// grid
 				if((mAxisY.gridFlags & Minor) && (v != rng.lval) && (v != rng.hval))
 				{
-					g.setColour(mGridColor);
+					g.setColour(mingridcolor);
 					g.drawDashedLine({ (float)rcf.getX(), ytick, (float)rcf.getRight(), ytick }, dash, 2, 1, 0);
 				}
 				// tick labl
@@ -517,6 +456,25 @@ Plot2dPane::DataSource::Ptr Plot2dPane::createFloatArrayDataSource(int icolor, c
 	return new FloatArrayDataSource(icolor, pv, len, copy, conv);
 }
 
+Plot2dPane::DataSource::Ptr Plot2dPane::createFloatArrayDataSource(int icolor, const double* pv, size_t len, bool copy, std::function<Point(size_t, double)> conv)
+{
+	class FloatArrayDataSource : public Plot2dPane::DataSource
+	{
+	protected:
+		DataRef<double> dataref;
+		std::function<Point(size_t, double)> convert;
+	public:
+		FloatArrayDataSource(int icolor, const double* pv, size_t len, bool copy, std::function<Point(size_t, double)> conv) : dataref(pv, len, copy), convert(conv) { colorIndex = icolor; }
+		virtual size_t size() const override { return dataref.size(); }
+		virtual Point at(size_t i) const override
+		{
+			if(convert) return convert(i, dataref[i]);
+			else  return { (float)i, (float)dataref[i] };
+		}
+	};
+	return new FloatArrayDataSource(icolor, pv, len, copy, conv);
+}
+
 Plot2dPane::DataSource::Ptr Plot2dPane::createComplexArrayDataSource(int icolor, const std::complex<double>* pc, size_t len, bool copy, std::function<Point(size_t, std::complex<double>)> conv)
 {
 	class ComplexArrayDataSource : public Plot2dPane::DataSource
@@ -573,76 +531,4 @@ Plot2dPane::DataSource::Ptr Plot2dPane::createComplexArrayDataSource(int icolor,
 		}
 	};
 	return new ComplexArrayDataSource(icolor, pr, pi, len, copy, conv);
-}
-
-// ================================================================================
-// generic axis builder
-
-Plot2dPane::Axis Plot2dPane::createAxisForLogDec(const juce::String& label, Range range, bool setmin)
-{
-	Range rn = range.normalized();
-	std::vector<float> majticks, minticks;
-	if(!rn.isEmpty())
-	{
-		for(SN10 snd = SN10::Floor(rn.lval); snd <= rn.hval; snd = snd.Next())
-		{
-			float tmaj = snd;
-			if(rn.lval <= tmaj) majticks.push_back(tmaj);
-			if(setmin)
-			{
-				for(int m = 2; m < 10; ++m)
-				{
-					float tmin = tmaj * (float)m;
-					if(rn.hval < tmin) break;
-					if(rn.lval <= tmin) minticks.push_back(tmin);
-				}
-			}
-		}
-	}
-	Axis axis;
-	axis.label = label;
-	axis.range = range;
-	axis.majTicks = majticks;
-	axis.minTicks = minticks;
-	axis.tickFlags = setmin ? Both : Major;
-	axis.gridFlags = Both;
-	axis.tickLabelFlags = Major;
-	axis.logscale = true;
-	axis.labelVisible = label.isNotEmpty();
-	return axis;
-}
-
-Plot2dPane::Axis Plot2dPane::createAxisForLin(const juce::String& label, Range range, bool setmin)
-{
-	Range rn = range.normalized();
-	std::vector<float> majticks, minticks;
-	if(!rn.isEmpty())
-	{
-		float diff = rn.hval - rn.lval;
-		float umaj = SN125::Floor(diff / 4);
-		for(float tmaj = umaj; tmaj <= rn.hval; tmaj += umaj)
-		{
-			if(rn.lval <= tmaj) majticks.push_back(tmaj);
-			if(setmin)
-			{
-				float umin = SN125::Floor(umaj / 4);
-				for(float tmin = tmaj + umin; tmin < tmaj + umaj; tmin += umin)
-				{
-					if(rn.hval < tmin) break;
-					if(rn.lval <= tmin) minticks.push_back(tmin);
-				}
-			}
-		}
-	}
-	Axis axis;
-	axis.label = label;
-	axis.range = range;
-	axis.majTicks = majticks;
-	axis.minTicks = minticks;
-	axis.tickFlags = setmin ? Both : Major;
-	axis.gridFlags = Both;
-	axis.tickLabelFlags = Major;
-	axis.logscale = false;
-	axis.labelVisible = label.isNotEmpty();
-	return axis;
 }

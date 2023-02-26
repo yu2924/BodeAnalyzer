@@ -1,10 +1,14 @@
 # BodeAnalyzer
  
- <img src="media/screenshot.png" width="50%">
+ <img src="media/screenshot-ir.png" width="50%">
 
  ## What is this?
 
- A simple tool for analyzing the frequency response of audio systems. Amplitude and phase responses are obtained using the Swept-Sine method also known as TSP (Time-Stretched Pulse).  
+ A simple tool for analyzing the frequency response of audio systems.
+ To obtain the amplitude and phase responses, two measurement method are provided.
+ * Swept-Sine method, also known as TSP (Time-Stretched Pulse)
+ * Stepped Sweep method
+
  Implemented with JUCE.
 
  ## Requirement

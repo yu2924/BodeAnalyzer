@@ -5,14 +5,23 @@
               bundleIdentifier="com.yu2924.BodeAnalyzer" companyName="yu2924">
   <MAINGROUP id="xmYuif" name="BodeAnalyzer">
     <GROUP id="{8E8B07C2-EA2E-CB5F-9E5A-80821B748489}" name="Source">
-      <FILE id="NLB8eX" name="AnalysisController.cpp" compile="1" resource="0"
-            file="Source/AnalysisController.cpp"/>
-      <FILE id="o2rENx" name="AnalysisController.h" compile="0" resource="0"
-            file="Source/AnalysisController.h"/>
       <FILE id="PAG2c7" name="Application.cpp" compile="1" resource="0" file="Source/Application.cpp"/>
       <FILE id="TMKuhG" name="Application.h" compile="0" resource="0" file="Source/Application.h"/>
       <FILE id="E2xYBn" name="DeviceForm.cpp" compile="1" resource="0" file="Source/DeviceForm.cpp"/>
       <FILE id="X99Ieo" name="DeviceForm.h" compile="0" resource="0" file="Source/DeviceForm.h"/>
+      <FILE id="No9C67" name="FloatGrain.h" compile="0" resource="0" file="Source/FloatGrain.h"/>
+      <FILE id="NLB8eX" name="IRAnalysisController.cpp" compile="1" resource="0"
+            file="Source/IRAnalysisController.cpp"/>
+      <FILE id="o2rENx" name="IRAnalysisController.h" compile="0" resource="0"
+            file="Source/IRAnalysisController.h"/>
+      <FILE id="c45VW7" name="IRResponsePane.cpp" compile="1" resource="0"
+            file="Source/IRResponsePane.cpp"/>
+      <FILE id="Z6b6JF" name="IRResponsePane.h" compile="0" resource="0"
+            file="Source/IRResponsePane.h"/>
+      <FILE id="WeZLC7" name="IRStimulusForm.cpp" compile="1" resource="0"
+            file="Source/IRStimulusForm.cpp"/>
+      <FILE id="wCTsD7" name="IRStimulusForm.h" compile="0" resource="0"
+            file="Source/IRStimulusForm.h"/>
       <FILE id="dKo6Gi" name="LatencyProbeController.cpp" compile="1" resource="0"
             file="Source/LatencyProbeController.cpp"/>
       <FILE id="saRZfy" name="LatencyProbeController.h" compile="0" resource="0"
@@ -31,13 +40,22 @@
             file="Source/ProgressiveSessionDialog.cpp"/>
       <FILE id="LSCTtd" name="ProgressiveSessionDialog.h" compile="0" resource="0"
             file="Source/ProgressiveSessionDialog.h"/>
-      <FILE id="c45VW7" name="ResponsePane.cpp" compile="1" resource="0"
-            file="Source/ResponsePane.cpp"/>
-      <FILE id="Z6b6JF" name="ResponsePane.h" compile="0" resource="0" file="Source/ResponsePane.h"/>
+      <FILE id="jorC95" name="SeqNum.h" compile="0" resource="0" file="Source/SeqNum.h"/>
+      <FILE id="Tl3BoX" name="SimpleConv.h" compile="0" resource="0" file="Source/SimpleConv.h"/>
       <FILE id="EEWzwA" name="SimpleFFT.h" compile="0" resource="0" file="Source/SimpleFFT.h"/>
-      <FILE id="WeZLC7" name="StimulusForm.cpp" compile="1" resource="0"
-            file="Source/StimulusForm.cpp"/>
-      <FILE id="wCTsD7" name="StimulusForm.h" compile="0" resource="0" file="Source/StimulusForm.h"/>
+      <FILE id="l9Yx52" name="SimpleLPF.h" compile="0" resource="0" file="Source/SimpleLPF.h"/>
+      <FILE id="gkqxEH" name="STAnalysisController.cpp" compile="1" resource="0"
+            file="Source/STAnalysisController.cpp"/>
+      <FILE id="lNBFgH" name="STAnalysisController.h" compile="0" resource="0"
+            file="Source/STAnalysisController.h"/>
+      <FILE id="dCqR5T" name="STResponsePane.cpp" compile="1" resource="0"
+            file="Source/STResponsePane.cpp"/>
+      <FILE id="AsoPcx" name="STResponsePane.h" compile="0" resource="0"
+            file="Source/STResponsePane.h"/>
+      <FILE id="GBjv22" name="STStimulusForm.cpp" compile="1" resource="0"
+            file="Source/STStimulusForm.cpp"/>
+      <FILE id="Hf5BN8" name="STStimulusForm.h" compile="0" resource="0"
+            file="Source/STStimulusForm.h"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_ASIO="1"/>

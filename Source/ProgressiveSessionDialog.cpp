@@ -28,8 +28,10 @@ public:
 		setUsingNativeTitleBar(false);
 		setDropShadowEnabled(false);
 		addAndMakeVisible(messageLabel);
+		messageLabel.setInterceptsMouseClicks(false, false);
 		messageLabel.setText(message, juce::dontSendNotification);
 		addAndMakeVisible(progressBar);
+		progressBar.setInterceptsMouseClicks(false, false);
 		addAndMakeVisible(cancelButton);
 		cancelButton.setButtonText("Cancel");
 		cancelButton.addShortcut(juce::KeyPress(juce::KeyPress::escapeKey));

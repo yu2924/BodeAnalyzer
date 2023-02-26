@@ -23,8 +23,8 @@ namespace BAAPP
 		virtual void setProbeLength(int v) = 0;
 		virtual float getProbeAmplitude() const = 0;
 		virtual void setProbeAmplitude(float v) = 0;
-		virtual int getResultLatency() const = 0;
-		virtual juce::Result startSession() = 0;
+		virtual int getRoundtripLatency() const = 0;
+		virtual void setRoundtripLatency(int v) = 0;
 		static Ptr createInstance(juce::AudioDeviceManager* adm);
 	};
 

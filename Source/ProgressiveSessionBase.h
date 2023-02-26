@@ -24,7 +24,8 @@ public:
 	void removeProgressiveSessionListener(Listener* p) { progressiveSessionListenerList.remove(p); }
 	void callProgressiveSessionBegin() { progressiveSessionListenerList.call(&Listener::progressiveSessionBegin, this); }
 	void callProgressiveSessionEnd(const juce::Result& r, bool aborted) { progressiveSessionListenerList.call(&Listener::progressiveSessionEnd, this, r, aborted); }
+	virtual juce::Result startProgressiveSession() = 0;
+	virtual void abortProgressiveSession() = 0;
 	virtual bool isProgressiveSessionRunning() const = 0;
 	virtual double getProgressiveSessionProgress() const = 0;
-	virtual void abortProgressiveSession() = 0;
 };

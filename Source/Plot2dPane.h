@@ -119,10 +119,8 @@ public:
 				 const juce::String& ylabel, Range yrange, const std::vector<float>& yticks, bool ylog, std::function<juce::String(float)> yTextFromValue);
 	// generic data source builder
 	static DataSource::Ptr createFloatArrayDataSource(int icolor, const float* pv, size_t len, bool copy, std::function<Point(size_t, float)> conv);
+	static DataSource::Ptr createFloatArrayDataSource(int icolor, const double* pv, size_t len, bool copy, std::function<Point(size_t, double)> conv);
 	static DataSource::Ptr createComplexArrayDataSource(int icolor, const std::complex<double>* pc, size_t len, bool copy, std::function<Point(size_t, std::complex<double>)> conv);
 	static DataSource::Ptr createComplexArrayDataSource(int icolor, const std::complex<float>* pc, size_t len, bool copy, std::function<Point(size_t, std::complex<float>)> conv);
 	static DataSource::Ptr createComplexArrayDataSource(int icolor, const float* pr, const float* pi, size_t len, bool copy, std::function<Point(size_t, std::complex<float>)> conv);
-	// generic axis builder
-	static Axis createAxisForLogDec(const juce::String& label, Range range, bool setmin);
-	static Axis createAxisForLin(const juce::String& label, Range range, bool setmin);
 };

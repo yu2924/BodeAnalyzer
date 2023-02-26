@@ -29,8 +29,8 @@ namespace BAAPP {
 //[/MiscUserDefs]
 
 //==============================================================================
-DeviceForm::DeviceForm (juce::AudioDeviceManager* adm, AnalysisController* ac, LatencyProbeController* lpc)
-    : audioDeviceManager(adm), analysisController(ac), latencyProbeController(lpc)
+DeviceForm::DeviceForm (juce::AudioDeviceManager* adm, LatencyProbeController* lpc)
+    : audioDeviceManager(adm), latencyProbeController(lpc)
 {
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
@@ -161,7 +161,6 @@ DeviceForm::DeviceForm (juce::AudioDeviceManager* adm, AnalysisController* ac, L
 
     //[Constructor] You can add your own custom stuff here..
     audioDeviceManager->addChangeListener(this);
-    analysisController->addChangeListener(this);
     latencyProbeController->addChangeListener(this);
     latencyProbeController->addProgressiveSessionListener(this);
     //[/Constructor]
@@ -172,7 +171,6 @@ DeviceForm::~DeviceForm()
     //[Destructor_pre]. You can add your own custom destruction code here..
     latencyProbeController->removeProgressiveSessionListener(this);
     latencyProbeController->removeChangeListener(this);
-    analysisController->removeChangeListener(this);
     audioDeviceManager->removeChangeListener(this);
     //[/Destructor_pre]
 
@@ -255,10 +253,6 @@ void DeviceForm::changeListenerCallback(juce::ChangeBroadcaster* source)
     {
         reflectProperties();
     }
-    else if(source == analysisController.get())
-    {
-        reflectProperties();
-    }
     else if(source == latencyProbeController.get())
     {
         reflectProperties();
@@ -276,11 +270,6 @@ void DeviceForm::progressiveSessionEnd(ProgressiveSessionBase* ps, const juce::R
         {
             juce::MessageManager::callAsync([this, r]() { juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "ERROR", r.getErrorMessage()); });
         }
-        else if(r.wasOk())
-        {
-            int latency = latencyProbeController->getResultLatency();
-            analysisController->setRoundTripLatency(latency);
-        }
     }
 }
 
@@ -297,7 +286,7 @@ void DeviceForm::reflectProperties()
         << "fs=" << ads.sampleRate;
     configureButton->setTooltip(inf);
     reopenButton->setTooltip(inf);
-    roundTripLatencyEdit->setText(juce::String(analysisController->getRoundTripLatency()), juce::dontSendNotification);
+    roundTripLatencyEdit->setText(juce::String(latencyProbeController->getRoundtripLatency()), juce::dontSendNotification);
     probeAmplitudeEdit->setText(juce::String(latencyProbeController->getProbeAmplitude()), juce::dontSendNotification);
     probeLengthEdit->setText(juce::String(latencyProbeController->getProbeLength()), juce::dontSendNotification);
 }
@@ -320,7 +309,7 @@ void DeviceForm::onReopenButtonClick()
 
 void DeviceForm::onRoundTripLatencyEditChange()
 {
-    analysisController->setRoundTripLatency(roundTripLatencyEdit->getText().getIntValue());
+    latencyProbeController->setRoundtripLatency(roundTripLatencyEdit->getText().getIntValue());
 }
 
 void DeviceForm::onProbeAmplitudeEditChange()
@@ -335,7 +324,7 @@ void DeviceForm::onProbeLengthEditChange()
 
 void DeviceForm::onProbeDetectButtonClick()
 {
-    juce::Result r = latencyProbeController->startSession();
+    juce::Result r = latencyProbeController->startProgressiveSession();
     if(r.wasOk()) progressiveSessionDialogShowAsync(latencyProbeController.get(), "now measuring...");
     else juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "ERROR", r.getErrorMessage());
 }
@@ -353,9 +342,9 @@ void DeviceForm::onProbeDetectButtonClick()
 BEGIN_JUCER_METADATA
 
 <JUCER_COMPONENT documentType="Component" className="DeviceForm" componentName=""
-                 parentClasses="public juce::Component, public juce::ChangeListener, public ProgressiveSessionBase::Listener"
-                 constructorParams="juce::AudioDeviceManager* adm, AnalysisController* ac, LatencyProbeController* lpc"
-                 variableInitialisers="audioDeviceManager(adm), analysisController(ac), latencyProbeController(lpc)"
+                 parentClasses="public juce::Component, public juce::ChangeBroadcaster, public juce::ChangeListener, public ProgressiveSessionBase::Listener"
+                 constructorParams="juce::AudioDeviceManager* adm, LatencyProbeController* lpc"
+                 variableInitialisers="audioDeviceManager(adm), latencyProbeController(lpc)"
                  snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330"
                  fixedSize="0" initialWidth="640" initialHeight="104">
   <BACKGROUND backgroundColour="ffffffff"/>
