@@ -50,11 +50,11 @@ This function identifies the round-trip latency through the target system by det
 
 fig. Latency Probe processing flow diagram
 
-<img src="media/corr-stimulus.png" width="25%">fig. random signal as plobe signal
+<img src="media/corr-stimulus.png" width="25%">fig. random number sequence as plobe signal (a)
 
-<img src="media/corr-response.png" width="25%">fig. delayed and filtered response signal
+<img src="media/corr-response.png" width="25%">fig. delayed and filtered response signal (b)
 
-<img src="media/corr-result.png" width="25%">fig. obtained correlation function
+<img src="media/corr-result.png" width="25%">fig. obtained correlation function (c)
 
 ### The Swept Sine method
 
