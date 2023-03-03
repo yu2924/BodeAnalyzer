@@ -67,12 +67,13 @@ fig. Swept Sine Method processing flow diagram
 
 definitions:
 
-$$
-N: \text{length of the entire stimulus signal}\\
-m: \text{the pulse width constant,}\ <N/2\\
-H'(n): \text{conjugate of}\ H(n)\\
-j: \text{imaginary unit,}\ \sqrt{-1}\\
-$$
+$$N: \text{length of the entire stimulus signal}$$
+
+$$m: \text{the pulse width constant,}\ \lt N/2$$
+
+$$H'(n): \text{conjugate of}\ H(n)$$
+
+$$j: \text{imaginary unit,}\ \sqrt{-1}$$
 
 Linear TSP (OATSP):
 
@@ -81,7 +82,7 @@ H(n)=
 \begin{cases}
 exp(\frac{-j 4 m \pi n^2}{N^2}), & \quad 0 \leq n \leq N/2\\
 H'(N - n), & \quad N/2 < n < N, \text{conjugate symmetric}\\
-\end{cases}\\
+\end{cases}
 $$
 
 Log TSP (Pink TSP):
@@ -92,11 +93,11 @@ H(n)=
 1, & \quad n = 0\\
 \frac{exp(j \alpha n log(n))}{\sqrt{n}}, & \quad 0 < n \leq N/2\\
 H'(N - n), & \quad N/2 < n < N, \text{conjugate symmetric}\\
-\end{cases}\\
+\end{cases}
 $$
 where
 $$
-\alpha = \frac{2 m \pi}{((N / 2) log(N / 2))}\\
+\alpha = \frac{2 m \pi}{((N / 2) log(N / 2))}
 $$
 
 Inverse Function:
