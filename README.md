@@ -43,14 +43,14 @@ CC0 1.0 Universal
 
 ### The Latency Probe
 
-この機能では、刺激信号と応答信号の相互相関関数を求めることによってターゲットシステムを経由した往復レイテンシを特定します。探査信号として非周期的な乱数列を使用します。  
-This function identifies the round-trip latency through the target system by determining the cross-correlation function between the stimulus signal and the response signal. An acyclic random number sequence is used as the probe signal.  
+この機能では、探査信号と応答信号の相互相関関数を求めることによってターゲットシステムを経由した往復レイテンシを特定します。探査信号として非周期的な乱数列を使用します。  
+This function identifies the round-trip latency through the target system by determining the cross-correlation function between the probe signal and the response signal. An acyclic random number sequence is used as the probe signal.  
 
 <img src="media/diagram-latency_probe.svg" width="90%">  
 
 fig. Latency Probe processing flow diagram
 
-<img src="media/corr-stimulus.png" width="25%">fig. random signal as stimulus
+<img src="media/corr-stimulus.png" width="25%">fig. random signal as plobe signal
 
 <img src="media/corr-response.png" width="25%">fig. delayed and filtered response signal
 
@@ -112,8 +112,8 @@ $$
 
 ### The Stepped Sweep Method
 
-この手法では、一ステップごとに探査信号の周波数を変化させ、対応する振幅と位相の応答を逐次測定します。古典的な周波数応答の測定方法です。  
-In this method, the frequency of the probing signal is varied at each step and the corresponding amplitude and phase responses are measured successively. It is a classical frequency response measurement method.  
+この手法では、一ステップごとに刺激信号の周波数を変化させ、対応する振幅と位相の応答を逐次測定します。古典的な周波数応答の測定方法です。  
+In this method, the frequency of the stimulus signal is varied at each step and the corresponding amplitude and phase responses are measured successively. It is a classical frequency response measurement method.  
 
 <img src="media/diagram-stepped_sweep.svg" width="90%">  
 
