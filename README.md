@@ -110,6 +110,10 @@ $$
 
 <img src="media/tsp-postrotation.png" width="25%">fig. linear tsp signal with rotation applied
 
+<img src="media/ir-prerotation.png" width="25%">fig. obtained impulse response
+
+<img src="media/ir-postrotation.png" width="25%">fig. impulse response with rotation applied
+
 ### The Stepped Sweep Method
 
 この手法では、一ステップごとに刺激信号の周波数を変化させ、対応する振幅と位相の応答を逐次測定します。古典的な周波数応答の測定方法です。  
