@@ -35,11 +35,7 @@ public:
 		addAndMakeVisible(cancelButton);
 		cancelButton.setButtonText("Cancel");
 		cancelButton.addShortcut(juce::KeyPress(juce::KeyPress::escapeKey));
-		cancelButton.onClick = [this]()
-		{
-			progressiveSession->abortProgressiveSession();
-			exitModalState(0);
-		};
+		cancelButton.onClick = [this]() { progressiveSession->abortProgressiveSession(); };
 		setSize(400, Margin * 2 + LabelHeight + BarHeight + Spacing + ButtonHeight);
 		startTimer(100);
 		progressiveSession->addProgressiveSessionListener(this);

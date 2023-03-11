@@ -37,7 +37,6 @@ namespace BAAPP
 			}
 			virtual void paint(juce::Graphics& g) override
 			{
-//				g.fillAll(juce::Colours::white);
 				g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 			}
 		};
@@ -64,7 +63,6 @@ namespace BAAPP
 			}
 			virtual void paint(juce::Graphics& g) override
 			{
-//				g.fillAll(juce::Colours::white);
 				g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 			}
 		};

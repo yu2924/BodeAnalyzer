@@ -32,6 +32,7 @@
             file="Source/MagPhasePlotPane.h"/>
       <FILE id="JmpbKi" name="MainWindow.cpp" compile="1" resource="0" file="Source/MainWindow.cpp"/>
       <FILE id="QBY0l5" name="MainWindow.h" compile="0" resource="0" file="Source/MainWindow.h"/>
+      <FILE id="BQvOBW" name="MLS.h" compile="0" resource="0" file="Source/MLS.h"/>
       <FILE id="ZcH4cp" name="Plot2dPane.cpp" compile="1" resource="0" file="Source/Plot2dPane.cpp"/>
       <FILE id="XyLCLD" name="Plot2dPane.h" compile="0" resource="0" file="Source/Plot2dPane.h"/>
       <FILE id="sdHSLQ" name="ProgressiveSessionBase.h" compile="0" resource="0"

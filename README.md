@@ -4,9 +4,14 @@
 
  ## What is this?
 
-オーディオシステムの周波数特性を解析するためのシンプルなツールです。振幅と位相の応答を得るために、2種類の測定方法を用意しています。  
- A simple tool for analyzing the frequency response of audio systems. To obtain the amplitude and phase responses, two measurement method are provided.
- * Swept-Sine method, also known as TSP (Time-Stretched Pulse)
+PCのオーディオインターフェースを利用してオーディオシステムの周波数特性を解析するためのシンプルなツールです。振幅と位相の応答を得るために、2種類の測定方法を用意しています。  
+ This is a simple tool for analyzing the frequency response of audio systems using the PC's audio interface. Two measurement methods are available to obtain amplitude and phase responses.  
+
+ * IR methods
+    * using pure impulses
+    * using Linear Swept-Sine (Linear TSP)
+    * using Log Swept-Sine (Log TSP)
+    * using MLS (Maximum Length sequence)
  * Stepped Sweep method
 
  Implemented with JUCE.
@@ -46,24 +51,24 @@ CC0 1.0 Universal
 この機能では、探査信号と応答信号の相互相関関数を求めることによってターゲットシステムを経由した往復レイテンシを特定します。探査信号として非周期的な乱数列を使用します。  
 This function identifies the round-trip latency through the target system by determining the cross-correlation function between the probe signal and the response signal. An acyclic random number sequence is used as the probe signal.  
 
-<img src="media/diagram-latency_probe.svg" width="90%">  
+<img src="media/diagram-latency_probe.svg">  
 
 fig. Latency Probe processing flow diagram
 
 <img src="media/corr-stimulus.png" width="25%">fig. random number sequence as plobe signal (a)
 
-<img src="media/corr-response.png" width="25%">fig. delayed and filtered response signal (b)
+<img src="media/corr-response.png" width="25%">fig. delayed and deformed response signal (b)
 
 <img src="media/corr-result.png" width="25%">fig. obtained correlation function (c)
 
-### The Swept Sine method
+### The Swept-Sine method
 
-この手法では、Swept Sineと呼ばれる刺激信号を使用してターゲットシステムのインパルス応答を求め、これを変換することで周波数応答を得ます。Swept SineはTSP (Time Stretched Pulse)としても知られています。  
-The method uses a stimulus signal called the Swept Sine to obtain the impulse response of the target system, and then transforms it to obtain the frequency response. Swept Sine is also known as TSP (Time Stretched Pulse).  
+この手法では、Swept-Sineと呼ばれる刺激信号を使用してターゲットシステムのインパルス応答を求め、それを変換することで周波数応答を得ます。Swept-SineはTSP (Time Stretched Pulse)としても知られています。  
+The method uses a stimulus signal called the Swept-Sine to obtain the impulse response of the target system, and then transforms it to obtain the frequency response. Swept-Sine is also known as TSP (Time Stretched Pulse).  
 
-<img src="media/diagram-swept_sine.svg" width="90%">  
+<img src="media/diagram-swept_sine.svg">  
 
-fig. Swept Sine Method processing flow diagram
+fig. Swept-Sine Method processing flow diagram
 
 definitions:
 
@@ -114,11 +119,20 @@ $$
 
 <img src="media/ir-postrotation.png" width="25%">fig. impulse response with rotation applied
 
+### The MLS Method
+
+この手法では、MLS (Maximum Length Sequence)を刺激信号に使用してターゲットシステムのインパルス応答を求め、それを変換することで周波数応答を得ます。  
+The method uses the MLS (Maximum Length Sequence) as the stimulus signal to obtain the impulse response of the target system, and then transforms it to obtain the frequency response.
+
+<img src="media/diagram-mls.svg">  
+
+fig. MLS Method processing flow diagram
+
 ### The Stepped Sweep Method
 
 この手法では、一ステップごとに刺激信号の周波数を変化させ、対応する振幅と位相の応答を逐次測定します。古典的な周波数応答の測定方法です。  
 In this method, the frequency of the stimulus signal is varied at each step and the corresponding amplitude and phase responses are measured successively. It is a classical frequency response measurement method.  
 
-<img src="media/diagram-stepped_sweep.svg" width="90%">  
+<img src="media/diagram-stepped_sweep.svg">  
 
 fig. Stepped Sweep Method processing flow diagram

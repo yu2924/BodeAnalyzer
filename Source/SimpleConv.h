@@ -73,12 +73,12 @@ public:
 		vcopy(pi, mHim.data(), l);
 		return true;
 	}
-	void Reset()
+	void Reset(size_t bufpos = 0)
 	{
 		vclear(mVreFore.data(), mVreFore.size());
 		vclear(mVreBack.data(), mVreBack.size());
 		vclear(mVim.data(), mVim.size());
-		mBufPos = 0;
+		mBufPos = bufpos & (mLength - 1);
 	}
 	void InternalTransform()
 	{

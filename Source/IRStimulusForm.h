@@ -84,6 +84,7 @@ private:
     std::unique_ptr<juce::ToggleButton> methodImpButton;
     std::unique_ptr<juce::ToggleButton> methodLinSSButton;
     std::unique_ptr<juce::ToggleButton> methodLogSSButton;
+    std::unique_ptr<juce::ToggleButton> methodMLSButton;
     std::unique_ptr<juce::Label> amplitudeLabel;
     std::unique_ptr<juce::Label> amplitudeEdit;
     std::unique_ptr<juce::Label> lengthLabel;

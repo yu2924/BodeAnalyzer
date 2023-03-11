@@ -65,6 +65,11 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     methodLogSSButton->setButtonText (TRANS("Log SS"));
     methodLogSSButton->setRadioGroupId (1);
 
+    methodMLSButton.reset (new juce::ToggleButton (juce::String()));
+    addAndMakeVisible (methodMLSButton.get());
+    methodMLSButton->setButtonText (TRANS("MLS"));
+    methodMLSButton->setRadioGroupId (1);
+
     amplitudeLabel.reset (new juce::Label (juce::String(),
                                            TRANS("Amplitude\n")));
     addAndMakeVisible (amplitudeLabel.get());
@@ -148,6 +153,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     methodImpButton->onClick = [this]() { onMethodButtonClick(); };
     methodLinSSButton->onClick = [this]() { onMethodButtonClick(); };
     methodLogSSButton->onClick = [this]() { onMethodButtonClick(); };
+    methodMLSButton->onClick = [this]() { onMethodButtonClick(); };
     amplitudeEdit->onTextChange = [this]() { onAmplitudeEditChnage(); };
     for(int order = 16; order <= 20; order++) lengthCombo->addItem(juce::String(1 << order), order);
     lengthCombo->onChange = [this]() { onLengthComboChange(); };
@@ -181,6 +187,7 @@ StimulusForm::~StimulusForm()
     methodImpButton = nullptr;
     methodLinSSButton = nullptr;
     methodLogSSButton = nullptr;
+    methodMLSButton = nullptr;
     amplitudeLabel = nullptr;
     amplitudeEdit = nullptr;
     lengthLabel = nullptr;
@@ -218,6 +225,7 @@ void StimulusForm::resized()
     methodImpButton->setBounds (getWidth() - 16 - 96, 24, 96, 24);
     methodLinSSButton->setBounds (getWidth() - 16 - 96, 48, 96, 24);
     methodLogSSButton->setBounds (getWidth() - 16 - 96, 72, 96, 24);
+    methodMLSButton->setBounds (getWidth() - 16 - 96, 96, 96, 24);
     startButton->setBounds (getWidth() - 16 - 96, 128, 96, 24);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
@@ -315,6 +323,7 @@ void StimulusForm::refrectProperties()
     methodImpButton->setToggleState(params.method == AnalysisController::MethodImpulse, juce::dontSendNotification);
     methodLinSSButton->setToggleState(params.method == AnalysisController::MethodLinearSS, juce::dontSendNotification);
     methodLogSSButton->setToggleState(params.method == AnalysisController::MethodLogSS, juce::dontSendNotification);
+    methodMLSButton->setToggleState(params.method == AnalysisController::MethodMLS, juce::dontSendNotification);
     // amplitude
     amplitudeEdit->setText(juce::String(params.amplitude), juce::dontSendNotification);
     // length
@@ -330,6 +339,7 @@ void StimulusForm::onMethodButtonClick()
     if     (methodImpButton->getToggleState()) params.method = AnalysisController::MethodImpulse;
     else if(methodLinSSButton->getToggleState()) params.method = AnalysisController::MethodLinearSS;
     else if(methodLogSSButton->getToggleState()) params.method = AnalysisController::MethodLogSS;
+    else if(methodMLSButton->getToggleState()) params.method = AnalysisController::MethodMLS;
     analysisController->setParameters(params);
 }
 
@@ -400,6 +410,9 @@ BEGIN_JUCER_METADATA
   <TOGGLEBUTTON name="" id="8ad28d2b343dbe2a" memberName="methodLogSSButton"
                 virtualName="" explicitFocusOrder="0" pos="16Rr 72 96 24" buttonText="Log SS"
                 connectedEdges="0" needsCallback="0" radioGroupId="1" state="0"/>
+  <TOGGLEBUTTON name="" id="6832a27f58025163" memberName="methodMLSButton" virtualName=""
+                explicitFocusOrder="0" pos="16Rr 96 96 24" buttonText="MLS" connectedEdges="0"
+                needsCallback="0" radioGroupId="1" state="0"/>
   <LABEL name="" id="117a0a7778f7a676" memberName="amplitudeLabel" virtualName=""
          explicitFocusOrder="0" pos="8 128 80 24" edTextCol="ff000000"
          edBkgCol="0" labelText="Amplitude&#10;" editableSingleClick="0"

@@ -7,12 +7,89 @@
 
 #include "IRAnalysisController.h"
 #include "SimpleFFT.h"
+#include "SimpleConv.h"
+#include "MLS.h"
 
 namespace BAAPP
 {
 
 	namespace IR
 	{
+
+		class TemporaryFile : public juce::ReferenceCountedObject
+		{
+		protected:
+			const juce::File path;
+			int numChannels = 0;
+			int repeatCount = 0;
+			std::unique_ptr<juce::FileOutputStream> outputStr;
+			std::unique_ptr<juce::FileInputStream> inputStr;
+		public:
+			using Ptr = juce::ReferenceCountedObjectPtr<TemporaryFile>;
+			TemporaryFile() : path(juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("BAAPP-IR.tmp"))
+			{
+				DBG("IR::TemporaryFile: path=" << path.getFullPathName().quoted());
+			}
+			virtual ~TemporaryFile()
+			{
+				outputStr = nullptr;
+				inputStr = nullptr;
+				if(path.exists()) path.deleteFile();
+			}
+			int getNumChannels() const { return numChannels; }
+			int getRepeatCount() const { return repeatCount; }
+			bool isWriting() const { return outputStr != nullptr; }
+			bool isReading() const { return inputStr != nullptr; }
+			juce::Result beginWrite(int cch, int repeat)
+			{
+				if(inputStr) return juce::Result::fail("tmpfile still reading");
+				outputStr = std::make_unique<juce::FileOutputStream>(path);
+				if(outputStr->failedToOpen()) { outputStr = nullptr; return juce::Result::fail("tmpfile open error"); }
+				numChannels = cch;
+				repeatCount = repeat;
+				outputStr->setPosition(0);
+				outputStr->truncate();
+				outputStr->writeInt(numChannels);
+				outputStr->writeInt(repeatCount);
+				return juce::Result::ok();
+			}
+			void endWrite()
+			{
+				if(outputStr)
+				{
+					DBG("IR::TemporaryFile: writtenframes=" << (outputStr->getPosition() - 2 * sizeof(int)) / (numChannels * sizeof(float)));
+					outputStr->flush();
+				}
+				outputStr = nullptr;
+			}
+			bool write(const float* const* pp, int cch, int off, int len)
+			{
+				if(!outputStr || (cch != numChannels)) return false;
+				for(int i = 0; i < len; ++i) { for(int ich = 0; ich < cch; ++ich) outputStr->writeFloat(pp[ich][i + off]); }
+				return true;
+			}
+			juce::Result beginRead()
+			{
+				if(outputStr) return juce::Result::fail("tmpfile still writing");
+				inputStr = std::make_unique<juce::FileInputStream>(path);
+				if(inputStr->failedToOpen()) { inputStr = nullptr; return juce::Result::fail("tmpfile open error"); }
+				int cch = inputStr->readInt();
+				int repeat = inputStr->readInt();
+				if((cch != numChannels) || (repeat != repeatCount)) { inputStr = nullptr; return juce::Result::fail("tmpfile property mismatch"); }
+				return juce::Result::ok();
+			}
+			void endRead()
+			{
+				inputStr = nullptr;
+			}
+			bool read(float* const* pp, int cch, int len, bool accumulate)
+			{
+				if(!inputStr || (cch != numChannels)) return false;
+				if(accumulate)	{ for(int i = 0; i < len; ++i) { for(int ich = 0; ich < cch; ++ich) pp[ich][i] += inputStr->readFloat(); } }
+				else			{ for(int i = 0; i < len; ++i) { for(int ich = 0; ich < cch; ++ich) pp[ich][i] = inputStr->readFloat(); } }
+				return true;
+			}
+		};
 
 		// ================================================================================
 		// AnalysisWorker
@@ -21,40 +98,64 @@ namespace BAAPP
 		{
 		public:
 			using Ptr = juce::ReferenceCountedObjectPtr<AnalysisWorker>;
-			size_t length = 0;
-			float amplitude = 1;
-			AnalysisWorker(size_t l, float a) : length(l), amplitude(a) {}
-			virtual void prepare(std::vector<float>& stimulus) = 0;
-			virtual void analyze(const float* presp, size_t lresp, std::vector<float>& ir, std::vector<std::complex<double> >& FR) const = 0;
+			virtual int getStimulusLength() const = 0;
+			virtual int getExtraRepeatCount() const = 0;
+			virtual std::vector<float> setupAndGenerateStimulus() = 0;
+			virtual juce::Result analyze(TemporaryFile::Ptr tmpfile, std::vector<AnalysisController::Response::Channel>* respchlist) = 0;
 		};
+
+		// --------------------------------------------------------------------------------
 
 		class ImpulseAnalysisWorker : public AnalysisWorker
 		{
+		protected:
+			const int order = 0;
+			const float amplitude = 1;
 		public:
-			SimpleFFTD fftd;
-			ImpulseAnalysisWorker(size_t l, float a) : AnalysisWorker(l, a) {}
-			virtual void prepare(std::vector<float>& stimulus) override
+			ImpulseAnalysisWorker(int ord, float a) : order(ord), amplitude(a) {}
+			virtual int getStimulusLength() const override { return 1 << order; }
+			virtual int getExtraRepeatCount() const override { return 0; }
+			virtual std::vector<float> setupAndGenerateStimulus() override
 			{
-				jassert(0 < length);
-				stimulus.assign(length, 0);
-				stimulus[0] = amplitude;
-				fftd.SetSize(length);
+				const int N = 1 << order;
+				std::vector<float> stim(N);
+				stim[0] = amplitude;
+				return stim;
 			}
-			virtual void analyze(const float* presp, size_t lresp, std::vector<float>& ir, std::vector<std::complex<double> >& FR) const override
+			virtual juce::Result analyze(TemporaryFile::Ptr tmpfile, std::vector<AnalysisController::Response::Channel>* respchlist) override
 			{
-				ir.resize(length);
-				std::copy(presp, presp + std::min(length, lresp), ir.data());
-				FR.resize(length);
+				const int cch = tmpfile->getNumChannels();
+				const int repeat = tmpfile->getRepeatCount();
+				const int N = 1 << order;
+				DBG(juce::String::formatted("IR::ImpulseAnalysisWorker: cch=%d repeat=%d N=%d", cch, repeat, N));
+				juce::AudioSampleBuffer rdbuf(cch, N);
+				rdbuf.clear();
+				juce::Result r = tmpfile->beginRead();
+				if(r.failed()) return r;
+				for(int i = 0; i < repeat; ++i) tmpfile->read(rdbuf.getArrayOfWritePointers(), cch, N, true);
+				tmpfile->endRead();
+				rdbuf.applyGain(1 / (float)repeat);
+				SimpleFFTD fft(N);
+				for(int ich = 0; ich < cch; ++ich) analyzeChannel(fft, rdbuf.getReadPointer(ich), N, &respchlist->at(ich));
+				return juce::Result::ok();
+			}
+		protected:
+			void analyzeChannel(const SimpleFFTD& fft, const float* pbuf, int N, AnalysisController::Response::Channel* respch) const
+			{
+				respch->ir = std::vector<float>(pbuf, pbuf + N);
+				respch->FR.resize(N);
 				float gainrecover = 1 / amplitude;
-				for(size_t c = length, i = 0; i < c; ++i) ir[i] *= gainrecover;
-				for(size_t c = length, i = 0; i < c; ++i) FR[i] = { ir[i], 0 };
-				fftd.Transform(true, FR.data());
+				for(int i = 0; i < N; ++i) respch->ir[i] *= gainrecover;
+				for(int i = 0; i < N; ++i) respch->FR[i] = { respch->ir[i], 0 };
+				fft.Transform(true, respch->FR.data());
 			}
 		};
 
+		// --------------------------------------------------------------------------------
+
 		class SweptSineAnalysisWorker : public AnalysisWorker
 		{
-		public:
+		protected:
 			static constexpr double PI = juce::MathConstants<double>::pi;
 			template<typename T> static T sq(T v) { return v * v; }
 			static std::vector<std::complex<double> > getenerateLinearSS(int N, int m)
@@ -67,7 +168,7 @@ namespace BAAPP
 				//
 				std::vector<std::complex<double> > vr(N);
 				const std::complex<double> j{ 0, 1 };
-				const double a = 4.0 * (double)m * PI / sq((double)N);
+				const double a = 4 * (double)m * PI / sq((double)N);
 				int n = 0;
 				for(; n <= N / 2; ++n) vr[n] = std::exp(-j * a * sq((double)n));
 				for(; n < N; ++n) vr[n] = std::conj(vr[N - n]);
@@ -79,83 +180,183 @@ namespace BAAPP
 				//
 				// H(n) = 1                             ...(n = 0)
 				// H(n) = exp(j a n log(n)) / sqrt(n)   ...(0 < n <= N/2)
-				// H(n) = H(N - n)                      ...(N/2 < n < N)
+				// H(n) = H'(N - n)                     ...(N/2 < n < N)
 				// a = 2 m pi / ((N / 2) log(N / 2))
 				//
 				std::vector<std::complex<double> > vr(N);
 				const std::complex<double> j{ 0, 1 };
-				const double a = 4 * m * PI / (N * std::log((double)N / 2));
+				const double a = 4 * (double)m * PI / (N * std::log((double)N / 2));
 				int n = 0;
 				vr[n] = { 1, 0 }; ++n;
-				// for(; n <= N / 2; ++n) vr[n] = std::exp(-j * a * (double)n * std::log((double)n)) / std::sqrt((double)n); // ???
-				for(; n <= N / 2; ++n) vr[n] = std::exp(-j * a * (double)(n + 1) * std::log((double)(n + 1))) / std::sqrt((double)(n + 1));
+				for(; n <= N / 2; ++n) vr[n] = std::exp(-j * a * (double)n * std::log((double)n)) / std::sqrt((double)n);
 				for(; n < N; ++n) vr[n] = std::conj(vr[N - n]);
 				return vr;
 			}
+			const int order = 0;
+			const float amplitude = 1;
 			std::vector<std::complex<double> > INVTSP;
-			SimpleFFTD fftd;
+			SimpleFFTD fft;
 			int rotateShift = 0;
 			float gainboost = 1;
 			const bool uselogss;
-			SweptSineAnalysisWorker(size_t l, float a, bool logss) : AnalysisWorker(l, a), uselogss(logss)
+		public:
+			SweptSineAnalysisWorker(int ord, float a, bool logss) : order(ord), amplitude(a), uselogss(logss) {}
+			virtual int getStimulusLength() const override { return 1 << order; }
+			virtual int getExtraRepeatCount() const override { return 0; }
+			virtual std::vector<float> setupAndGenerateStimulus() override
 			{
-			}
-			virtual void prepare(std::vector<float>& stimulus) override
-			{
-				jassert(0 < length);
-				int N = (int)length;
-				int m = N / 4; // must be less than N/2
+				const int N = 1 << order;
+				const int m = N / 4; // must be less than N/2
 				rotateShift = N / 2 - m;
 				gainboost = 1;
-				fftd.SetSize(length);
+				fft.SetSize(N);
 				// TSP
 				std::vector<std::complex<double> > TSP = uselogss
 					? getenerateLogSS(N, m)
 					: getenerateLinearSS(N, m);
-				// tsp: ifft(TSP)
-				std::vector<float>& tsp = stimulus;
+				// tsp = ifft(TSP)
+				std::vector<float> tsp(N);
 				{
-					tsp.resize(N, 0);
 					std::vector<std::complex<double> > TMP = TSP;
-					fftd.Transform(false, TMP.data());
+					fft.Transform(false, TMP.data());
 					for(int i = 0; i < N; ++i) tsp[i] = (float)TMP[i].real();
 					float peak = 0; for(int i = 0; i < N; ++i) peak = std::max(peak, std::abs(tsp[i]));
 					gainboost = amplitude / peak;
 					for(int i = 0; i < N; ++i) tsp[i] *= gainboost;
 					std::rotate(tsp.begin(), tsp.begin() + N - rotateShift, tsp.end());
 				}
-				// INVTSP: 1/TSP (or TSP.conj())
+				// INVTSP = 1 / TSP
 				INVTSP.assign(N, { 0, 0 });
 				for(int i = 0; i < N; ++i) INVTSP[i] = 1.0 / TSP[i];
+				return tsp;
 			}
-			virtual void analyze(const float* presp, size_t lresp, std::vector<float>& ir, std::vector<std::complex<double> >& FR) const override
+			virtual juce::Result analyze(TemporaryFile::Ptr tmpfile, std::vector<AnalysisController::Response::Channel>* respchlist) override
 			{
-				int N = (int)length;
-				// TSPRESP: fft(tspresp)*INVTSP
-				std::vector<float> tspresp(N, 0);
-				std::copy(presp, presp + std::min(length, lresp), tspresp.data());
-				tspresp.resize(N, 0);
+				const int cch = tmpfile->getNumChannels();
+				const int repeat = tmpfile->getRepeatCount();
+				const int N = 1 << order;
+				DBG(juce::String::formatted("IR::SweptSineAnalysisWorker: cch=%d repeat=%d N=%d", cch, repeat, N));
+				juce::AudioSampleBuffer rdbuf(cch, N);
+				rdbuf.clear();
+				juce::Result r = tmpfile->beginRead();
+				if(r.failed()) return r;
+				for(int i = 0; i < repeat; ++i) tmpfile->read(rdbuf.getArrayOfWritePointers(), cch, N, true);
+				tmpfile->endRead();
+				rdbuf.applyGain(1 / (float)repeat);
+				for(int ich = 0; ich < cch; ++ich) analyzeChannel(rdbuf.getReadPointer(ich), N, &respchlist->at(ich));
+				return juce::Result::ok();
+			}
+		protected:
+			void analyzeChannel(const float* pbuf, int N, AnalysisController::Response::Channel* respch) const
+			{
+				// TSPRESP = fft(tspresp) * INVTSP
+				const float* tspresp = pbuf;
 				std::vector<std::complex<double> > TSPRESP(N);
 				{
 					float gainrecover = 1 / gainboost;
 					for(int i = 0; i < N; ++i) TSPRESP[i] = { tspresp[i] * gainrecover, 0 };
-					fftd.Transform(true, TSPRESP.data());
+					fft.Transform(true, TSPRESP.data());
 					for(int i = 0; i < N; ++i) TSPRESP[i] *= INVTSP[i];
 				}
-				// ir: ifft(TSPRESP)
+				// ir = ifft(TSPRESP)
+				std::vector<float>& ir = respch->ir;
 				ir.resize(N);
 				{
 					std::vector<std::complex<double> > TMP = TSPRESP;
-					fftd.Transform(false, TMP.data());
+					fft.Transform(false, TMP.data());
 					for(int i = 0; i < N; ++i) ir[i] = (float)TMP[i].real();
 					std::rotate(ir.begin(), ir.begin() + rotateShift, ir.end());
 				}
-				// FR: fft(ir)
+				// FR = fft(ir)
+				std::vector<std::complex<double> >& FR = respch->FR;
 				FR.resize(N);
 				{
 					for(int i = 0; i < N; ++i) FR[i] = { ir[i], 0 };
-					fftd.Transform(true, FR.data());
+					fft.Transform(true, FR.data());
 				}
+			}
+		};
+
+		// --------------------------------------------------------------------------------
+
+		class MLSAnalysisWorker : public AnalysisWorker
+		{
+		public:
+			static std::vector<float> generateMLS(int order, int len)
+			{
+				jassert(3 <= order);
+				std::vector<float> vr(len);
+				MLS mls(order);
+				for(int i = 0; i < len; ++i) vr[i] = mls.next() ? 1.0f : -1.0f;
+				return vr;
+			}
+			const int order = 0;
+			const float amplitude = 1;
+			std::vector<float> inverseStimulus;
+			MLSAnalysisWorker(int ord, float a) : order(ord), amplitude(a) {}
+			virtual int getStimulusLength() const override { return (1 << order) - 1; }
+			virtual int getExtraRepeatCount() const override { return 2; }
+			virtual std::vector<float> setupAndGenerateStimulus() override
+			{
+				const int N = 1 << order;
+				const int L = N - 1;
+				std::vector<float> mls = generateMLS(order, L);
+				std::vector<float> stim = mls; for(auto&& e : stim) e *= amplitude;
+				inverseStimulus.resize(N);
+				std::reverse_copy(mls.begin(), mls.end(), inverseStimulus.begin() + 1);
+				return stim;
+			}
+			virtual juce::Result analyze(TemporaryFile::Ptr tmpfile, std::vector<AnalysisController::Response::Channel>* respchlist) override
+			{
+				const int cch = tmpfile->getNumChannels();
+				const int repeat = tmpfile->getRepeatCount();
+				jassert(3 <= repeat);
+				const int N = 1 << order;
+				const int L = N - 1;
+				DBG(juce::String::formatted("IR::MLSAnalysisWorker: cch=%d repeat=%d L=%d", cch, repeat, L));
+				std::vector<std::unique_ptr<SimpleConvF> > convolvers(cch);
+				for(auto&& conv : convolvers)
+				{
+					conv = std::make_unique<SimpleConvF>(N);
+					conv->SetIR(inverseStimulus.data(), inverseStimulus.size());
+				}
+				SimpleFFTD fft(N);
+				for(int ich = 0; ich < cch; ++ich)
+				{
+					AnalysisController::Response::Channel& ch = respchlist->at(ich);
+					ch.ir.resize(L);
+					ch.FR.resize(N);
+				}
+				juce::AudioSampleBuffer rdbuf(cch, N);
+				rdbuf.clear();
+				juce::AudioSampleBuffer irbuf(cch, L);
+				irbuf.clear();
+				juce::Result r = tmpfile->beginRead();
+				if(r.failed()) return r;
+				// convolve: initial latency
+				tmpfile->read(rdbuf.getArrayOfWritePointers(), cch, N, false);
+				for(int ich = 0; ich < cch; ++ich) convolvers[ich]->Process(rdbuf.getWritePointer(ich), N);
+				// convolve: discard 2, and accumulate the rest
+				for(int i = 0; i < repeat; ++i)
+				{
+					tmpfile->read(rdbuf.getArrayOfWritePointers(), cch, L, false);
+					for(int ich = 0; ich < cch; ++ich)
+					{
+						convolvers[ich]->Process(rdbuf.getWritePointer(ich), L);
+						if(2 <= i) irbuf.addFrom(ich, 0, rdbuf, ich, 0, L, 1);
+					}
+				}
+				irbuf.applyGain(1 / ((float)L * amplitude) * (float)(repeat - 2));
+				tmpfile->endRead();
+				// result
+				for(int ich = 0; ich < cch; ++ich)
+				{
+					AnalysisController::Response::Channel& ch = respchlist->at(ich);
+					juce::FloatVectorOperations::copy(ch.ir.data(), irbuf.getReadPointer(ich), L);
+					for(int i = 0; i < L; ++i) ch.FR[i] = { ch.ir[i], 0 };
+					fft.Transform(true, ch.FR.data());
+				}
+				return juce::Result::ok();
 			}
 		};
 
@@ -164,33 +365,34 @@ namespace BAAPP
 
 		struct Transmitter
 		{
-			std::vector<float> buffer;
+			std::vector<float> stimulus;
 			int repeatDownCount = 0;
 			int readRemaining = 0;
-			void setSize(int len)
-			{
-				buffer.resize(len, 0);
-			}
+			const std::vector<float>& getStimulus() const { return stimulus; }
+			void setStimulus(std::vector<float>& v) { stimulus = v; }
 			void prepare(int repeat)
 			{
 				repeatDownCount = repeat;
-				readRemaining = (int)buffer.size();
+				readRemaining = (int)stimulus.size();
+			}
+			void unprepare()
+			{
 			}
 			void process(float* pdst, int ldst)
 			{
-				while(0 < ldst)
+				int dstpos = 0;
+				while(dstpos < ldst)
 				{
 					if(repeatDownCount <= 0) break;
-					int lseg = std::min(readRemaining, ldst);
-					juce::FloatVectorOperations::copy(pdst, buffer.data() + buffer.size() - readRemaining, lseg);
-					ldst -= lseg;
-					pdst += lseg;
+					int lseg = std::min(readRemaining, ldst - dstpos);
+					juce::FloatVectorOperations::copy(pdst + dstpos, stimulus.data() + stimulus.size() - readRemaining, lseg);
+					dstpos += lseg;
 					readRemaining -= lseg;
-					if(readRemaining <= 0) { --repeatDownCount; readRemaining = (int)buffer.size(); }
+					if(readRemaining <= 0) { --repeatDownCount; readRemaining = (int)stimulus.size(); }
 				}
-				if(0 < ldst)
+				if(dstpos < ldst)
 				{
-					juce::FloatVectorOperations::clear(pdst, ldst);
+					juce::FloatVectorOperations::clear(pdst + dstpos, ldst - dstpos);
 				}
 			}
 			bool isCompleted() const
@@ -201,27 +403,30 @@ namespace BAAPP
 
 		struct Receiver
 		{
-			juce::AudioBuffer<float> buffer;
+			TemporaryFile::Ptr tmpFile;
 			int skipRemaining = 0;
-			int repeatTotalCount = 0;
-			int repeatCount = 0;
 			int writeLength = 0;
 			int writePosition = 0;
-			void setSize(int cch, int len)
+			juce::Result prepare(int cch, int len, int repeat, int latency)
 			{
-				buffer.setSize(cch, len);
-				writeLength = len;
-			}
-			void prepare(int repeat, int latency)
-			{
-				buffer.clear();
+				tmpFile = new TemporaryFile;
+				juce::Result r = tmpFile->beginWrite(cch, repeat);
+				if(r.failed()) return r;
 				skipRemaining = latency;
-				repeatTotalCount = repeat;
-				repeatCount = 0;
+				writeLength = len * repeat;
 				writePosition = 0;
+				return juce::Result::ok();
+			}
+			TemporaryFile::Ptr unprepare()
+			{
+				if(tmpFile) tmpFile->endWrite();
+				TemporaryFile::Ptr tmp = tmpFile;
+				tmpFile = nullptr;
+				return tmp;
 			}
 			void process(const float* const* ppsrc, int cch, int srclen)
 			{
+				jassert(tmpFile != nullptr);
 				int srcpos = 0;
 				if(0 < skipRemaining)
 				{
@@ -232,23 +437,21 @@ namespace BAAPP
 				if(0 < skipRemaining) return;
 				while(srcpos < srclen)
 				{
-					if(repeatTotalCount <= repeatCount) break;
-					int lseg = std::min(buffer.getNumSamples() - writePosition, srclen - srcpos);
-					for(int ich = 0; ich < cch; ++ich)
-					{
-						juce::FloatVectorOperations::add(buffer.getWritePointer(ich, writePosition), ppsrc[ich] + srcpos, lseg);
-					}
+					if(writeLength <= writePosition) break;
+					int lseg = std::min(writeLength - writePosition, srclen - srcpos);
+					tmpFile->write(ppsrc, cch, srcpos, lseg);
 					writePosition += lseg;
 					srcpos += lseg;
-					if(buffer.getNumSamples() <= writePosition) { repeatCount++; writePosition = 0; }
 				}
 			}
-			void finalize()
+			double getProgress() const
 			{
-				buffer.applyGain(1.0f / (float)repeatTotalCount);
+				return (double)writePosition / (double)writeLength;
 			}
-			double getProgress() const { return (double)(writeLength * repeatCount + writePosition) / (double)(writeLength * repeatTotalCount); }
-			bool isCompleted() const { return repeatTotalCount <= repeatCount; }
+			bool isCompleted() const
+			{
+				return writeLength <= writePosition;
+			}
 		};
 
 		// ================================================================================
@@ -283,22 +486,21 @@ namespace BAAPP
 			}
 			virtual void setParameters(const Parameters& v) override
 			{
-				parameters.method = std::max(MethodImpulse, std::min(MethodLogSS, v.method));
-				parameters.order = std::max(16, std::min(20, v.order));
-				parameters.amplitude = std::max(1e-3f, v.amplitude);
-				parameters.repeatCount = std::max(1, std::min(8, v.repeatCount));
-				int length = 1 << parameters.order;
-				float amplitude = parameters.amplitude;
-				transmitter.setSize(length);
+				parameters.method		= std::max(MethodImpulse, std::min(MethodMLS, v.method));
+				parameters.order		= std::max(16, std::min(20, v.order));
+				parameters.amplitude	= std::max(1e-3f, v.amplitude);
+				parameters.repeatCount	= std::max(1, std::min(8, v.repeatCount));
 				analysisWorker = nullptr;
 				switch(parameters.method)
 				{
-					case MethodImpulse: analysisWorker = new ImpulseAnalysisWorker(length, amplitude); break;
-					case MethodLinearSS: analysisWorker = new SweptSineAnalysisWorker(length, amplitude, false); break;
-					case MethodLogSS: analysisWorker = new SweptSineAnalysisWorker(length, amplitude, true); break;
+					case MethodImpulse	: analysisWorker = new ImpulseAnalysisWorker	(parameters.order, parameters.amplitude); break;
+					case MethodLinearSS	: analysisWorker = new SweptSineAnalysisWorker	(parameters.order, parameters.amplitude, false); break;
+					case MethodLogSS	: analysisWorker = new SweptSineAnalysisWorker	(parameters.order, parameters.amplitude, true); break;
+					case MethodMLS		: analysisWorker = new MLSAnalysisWorker		(parameters.order, parameters.amplitude); break;
 					default: break; // unexpected
 				}
-				analysisWorker->prepare(transmitter.buffer);
+				std::vector<float> stimulus = analysisWorker->setupAndGenerateStimulus();
+				transmitter.setStimulus(stimulus);
 				sendChangeMessage();
 			}
 			virtual int getRoundtripLatency() const override
@@ -312,7 +514,7 @@ namespace BAAPP
 			}
 			virtual const std::vector<float>& getStimulus() const override
 			{
-				return transmitter.buffer;
+				return transmitter.getStimulus();
 			}
 			virtual const Response& getResponse() const override
 			{
@@ -330,19 +532,22 @@ namespace BAAPP
 				if(sessionRunning) return juce::Result::fail("session still running");
 				auto dev = audioDeviceManager->getCurrentAudioDevice();
 				if(!dev) return juce::Result::fail("device not ready");
+				double fs = dev->getCurrentSampleRate();
+				if(fs <= 0) return juce::Result::fail("unexpected samplerate");
 				int ccho = dev->getActiveOutputChannels().countNumberOfSetBits();
 				int cchi = dev->getActiveInputChannels().countNumberOfSetBits();
 				if((ccho <= 0) || (cchi <= 0)) return juce::Result::fail("device channel disabled");
+				int length = analysisWorker->getStimulusLength();
+				int repeat = parameters.repeatCount + analysisWorker->getExtraRepeatCount();
+				juce::Result r = receiver.prepare(cchi, length, repeat, roundtripLatency);
+				if(r.failed()) return r;
+				transmitter.prepare(repeat);
 				sessionProgress = 0;
 				sessionRunning = true;
 				callProgressiveSessionBegin();
 				clearResponse();
-				response.sampleRate = dev->getCurrentSampleRate();
+				response.sampleRate = fs;
 				response.channelList.resize(cchi);
-				int length = 1 << parameters.order;
-				receiver.setSize(cchi, length);
-				receiver.prepare(parameters.repeatCount, roundtripLatency);
-				transmitter.prepare(parameters.repeatCount);
 				audioDeviceManager->addAudioCallback(this);
 				return juce::Result::ok();
 			}
@@ -354,6 +559,8 @@ namespace BAAPP
 					// endsession case: aborted
 					sessionRunning = false;
 					audioDeviceManager->removeAudioCallback(this);
+					transmitter.unprepare();
+					receiver.unprepare();
 					callProgressiveSessionEnd(juce::Result::fail("aborted"), true);
 				});
 			}
@@ -383,12 +590,18 @@ namespace BAAPP
 						// endsession case: succeeded
 						sessionRunning = false;
 						audioDeviceManager->removeAudioCallback(this);
-						receiver.finalize();
-						for(int cch = (int)response.channelList.size(), ich = 0; ich < cch; ++ich)
+						transmitter.unprepare();
+						TemporaryFile::Ptr tmpfile = receiver.unprepare();
+						juce::Thread::launch([this, tmpfile]()
 						{
-							analysisWorker->analyze(receiver.buffer.getReadPointer(ich), receiver.buffer.getNumSamples(), response.channelList[ich].ir, response.channelList[ich].FR);
-						}
-						callProgressiveSessionEnd(juce::Result::ok(), false);
+							double t = 0;
+							{
+								juce::ScopedTimeMeasurement stm(t);
+								juce::Result r = analysisWorker->analyze(tmpfile, &response.channelList);
+								juce::MessageManager::callAsync([this, r]() { callProgressiveSessionEnd(r, false); });
+							}
+							DBG("IR::AnalysisController: method=" << parameters.method << " elapsedtime=" << t * 1000 << " ms");
+						});
 					});
 				}
 			}
@@ -403,6 +616,8 @@ namespace BAAPP
 					// endsession case: unexpected stop
 					sessionRunning = false;
 					audioDeviceManager->removeAudioCallback(this);
+					transmitter.unprepare();
+					receiver.unprepare();
 					callProgressiveSessionEnd(juce::Result::fail("unexpected stop"), false);
 				});
 			}
@@ -414,6 +629,8 @@ namespace BAAPP
 					// endsession case: device error
 					sessionRunning = false;
 					audioDeviceManager->removeAudioCallback(this);
+					transmitter.unprepare();
+					receiver.unprepare();
 					callProgressiveSessionEnd(juce::Result::fail(msg), false);
 				});
 			}

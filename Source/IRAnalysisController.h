@@ -22,7 +22,7 @@ namespace BAAPP
 			AnalysisController() {}
 		public:
 			using Ptr = juce::ReferenceCountedObjectPtr<AnalysisController>;
-			enum Method { MethodImpulse, MethodLinearSS, MethodLogSS };
+			enum Method { MethodImpulse, MethodLinearSS, MethodLogSS, MethodMLS };
 			struct Parameters
 			{
 				Method method;

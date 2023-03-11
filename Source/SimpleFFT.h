@@ -36,8 +36,13 @@ public:
 			mLength = 1; mStage = 0; while(mLength < l) { mLength <<= 1; ++mStage; }
 			mCosT.resize(mLength / 2 + 1);
 			mSinT.resize(mLength / 2 + 1);
-			T w = 0, dw = TWOPI / (T)mLength;
-			for(size_t i = 0; i <= mLength / 2; ++i, w += dw) { mSinT[i] = sin(w); mCosT[i] = cos(w); }
+			for(size_t i = 0; i <= mLength / 2; ++i)
+			{
+				T w = TWOPI * (T)i / (T)mLength;
+				mSinT[i] = sin(w);
+				mCosT[i] = cos(w);
+			}
+
 		}
 		return mLength;
 	}
