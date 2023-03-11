@@ -9,9 +9,9 @@ PCのオーディオインターフェースを利用してオーディオシス
 
  * IR methods
     * using pure impulses
-    * using Linear Swept-Sine (Linear TSP)
-    * using Log Swept-Sine (Log TSP)
-    * using MLS (Maximum Length sequence)
+    * using Linear Swept-Sine (OATSP)
+    * using Log Swept-Sine (Pink TSP)
+    * using MLS
  * Stepped Sweep method
 
  Implemented with JUCE.
@@ -63,8 +63,8 @@ fig. Latency Probe processing flow diagram
 
 ### The Swept-Sine method
 
-この手法では、Swept-Sineと呼ばれる刺激信号を使用してターゲットシステムのインパルス応答を求め、それを変換することで周波数応答を得ます。Swept-SineはTSP (Time Stretched Pulse)としても知られています。  
-The method uses a stimulus signal called the Swept-Sine to obtain the impulse response of the target system, and then transforms it to obtain the frequency response. Swept-Sine is also known as TSP (Time Stretched Pulse).  
+この手法では、Swept-Sineと呼ばれる刺激信号を使用してターゲットシステムのインパルス応答を求め、それを変換することで周波数応答を得ます。Swept-SineはTSP (time stretched pulse)としても知られています。  
+The method uses a stimulus signal called the Swept-Sine to obtain the impulse response of the target system, and then transforms it to obtain the frequency response. Swept-Sine is also known as TSP (time stretched pulse).  
 
 <img src="media/diagram-swept_sine.svg">  
 
@@ -80,7 +80,7 @@ $$H'(n): \text{conjugate of}\ H(n)$$
 
 $$j: \text{imaginary unit,}\ \sqrt{-1}$$
 
-Linear TSP (OATSP):
+Linear Swept-Sine (OATSP):
 
 $$
 H(n)=
@@ -90,7 +90,7 @@ H'(N - n), & \quad N/2 < n < N, \text{conjugate symmetric}\\
 \end{cases}
 $$
 
-Log TSP (Pink TSP):
+Log Swept-Sine (Pink TSP):
 
 $$
 H(n)=
@@ -121,8 +121,8 @@ $$
 
 ### The MLS Method
 
-この手法では、MLS (Maximum Length Sequence)を刺激信号に使用してターゲットシステムのインパルス応答を求め、それを変換することで周波数応答を得ます。  
-The method uses the MLS (Maximum Length Sequence) as the stimulus signal to obtain the impulse response of the target system, and then transforms it to obtain the frequency response.
+この手法では、MLS (maximum length sequence, M系列)を刺激信号に使用してターゲットシステムのインパルス応答を求め、それを変換することで周波数応答を得ます。  
+The method uses the MLS (maximum length sequence, m-sequence) as the stimulus signal to obtain the impulse response of the target system, and then transforms it to obtain the frequency response.
 
 <img src="media/diagram-mls.svg">  
 
