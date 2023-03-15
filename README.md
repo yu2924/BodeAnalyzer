@@ -101,7 +101,9 @@ H(n)=
 H'(N - n), & \quad N/2 < n < N, \text{conjugate symmetric}\\
 \end{cases}
 $$
+
 where
+
 $$
 \alpha = \frac{2 m \pi}{((N / 2) log(N / 2))}
 $$
