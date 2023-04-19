@@ -21,7 +21,7 @@ PCのオーディオインターフェースを利用してオーディオシス
 * JUCE framework: [download](https://juce.com/get-juce/download), [repository](https://github.com/juce-framework/JUCE)
 * Projucer: [download](https://juce.com/discover/projucer), or build from source
 * C++ build tools: Visual Studio, Xcode, etc.
-* ASIO SDK (optional, Windows only): https://www.steinberg.net/developers/。
+* ASIO SDK (optional, Windows only): https://www.steinberg.net/developers/
 
  ## How to build
 
