@@ -134,9 +134,9 @@ fig. MLS Method processing flow diagram
 ### The Stepped Sweep Method
 
 この手法では、一ステップごとに刺激信号の周波数を変化させ、同期検波によって対応する振幅と位相の応答を逐次測定します。古典的な周波数応答の測定方法です。  
-ナイキスト周波数近傍の特性を改善するため、オーバーサンプリングを施しています。また、測定速度向上のため、LPFのセトリングタイムを最小化しています。  
+測定速度向上のため、LPFのセトリングタイムを最小化しています。また、ナイキスト周波数近傍の特性を改善するため、オーバーサンプリングを施しています。  
 In this method, the frequency of the stimulus signal is varied at each step, and the corresponding amplitude and phase responses are measured sequentially by synchronous detection. It is a classical frequency response measurement method.  
-Oversampling is applied to improve the characteristics near the Nyquist frequency. And, the settling time of the LPF is minimized to improve the measurement speed.  
+The settling time of the LPF is minimized to improve the measurement speed. And, Oversampling is applied to improve the characteristics near the Nyquist frequency. 
 
 <img src="media/diagram-stepped_sweep.svg">  
 
