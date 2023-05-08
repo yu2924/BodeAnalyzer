@@ -49,8 +49,8 @@ CC0 1.0 Universal
 
 ### The Latency Probe
 
-この機能では、探査信号と応答信号の相互相関関数を求めることによってターゲットシステムを経由した往復レイテンシを特定します。探査信号として非周期的な乱数列を使用します。  
-This function identifies the round-trip latency through the target system by determining the cross-correlation function between the probe signal and the response signal. An acyclic random number sequence is used as the probe signal.  
+時間の遅れは位相の遅れとして測定されるので、システムの往復レイテンシを正確に把握することは重要です。この機能では、探査信号と応答信号の相互相関関数を求めることによってターゲットシステムを経由した往復レイテンシを特定します。探査信号として非周期的な乱数列を使用します。  
+Since time delay is measured as a phase delay, it is important to determine the precise round-trip latency of the system. This function identifies the round-trip latency through the target system by determining the cross-correlation function between the probe signal and the response signal. An acyclic random number sequence is used as the probe signal.  
 
 <img src="media/diagram-latency_probe.svg">  
 
