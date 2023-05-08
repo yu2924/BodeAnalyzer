@@ -65,7 +65,7 @@ fig. Latency Probe processing flow diagram
 ### The Swept-Sine method
 
 この手法では、Swept-Sineと呼ばれる刺激信号を使用してターゲットシステムのインパルス応答を求め、それを変換することで周波数応答を得ます。Swept-SineはTSP (time stretched pulse)としても知られています。  
-The method uses a stimulus signal called the Swept-Sine to obtain the impulse response of the target system, and then transforms it to obtain the frequency response. Swept-Sine is also known as TSP (time stretched pulse).  
+This method uses a stimulus signal called the Swept-Sine to obtain the impulse response of the target system, and then transforms it to obtain the frequency response. Swept-Sine is also known as TSP (time stretched pulse).  
 
 <img src="media/diagram-swept_sine.svg">  
 
@@ -125,7 +125,7 @@ $$
 ### The MLS Method
 
 この手法では、MLS (maximum length sequence, M系列)を刺激信号に使用してターゲットシステムのインパルス応答を求め、それを変換することで周波数応答を得ます。  
-The method uses the MLS (maximum length sequence, m-sequence) as the stimulus signal to obtain the impulse response of the target system, and then transforms it to obtain the frequency response.
+This method uses the MLS (maximum length sequence, m-sequence) as the stimulus signal to obtain the impulse response of the target system, and then transforms it to obtain the frequency response.
 
 <img src="media/diagram-mls.svg">  
 
@@ -133,8 +133,10 @@ fig. MLS Method processing flow diagram
 
 ### The Stepped Sweep Method
 
-この手法では、一ステップごとに刺激信号の周波数を変化させ、対応する振幅と位相の応答を逐次測定します。古典的な周波数応答の測定方法です。  
-In this method, the frequency of the stimulus signal is varied at each step and the corresponding amplitude and phase responses are measured successively. It is a classical frequency response measurement method.  
+この手法では、一ステップごとに刺激信号の周波数を変化させ、同期検波によって対応する振幅と位相の応答を逐次測定します。古典的な周波数応答の測定方法です。  
+ナイキスト周波数近傍の特性を改善するため、オーバーサンプリングを施しています。また、測定速度向上のため、LPFのセトリングタイムを最小化しています。  
+In this method, the frequency of the stimulus signal is varied at each step, and the corresponding amplitude and phase responses are measured sequentially by synchronous detection. It is a classical frequency response measurement method.  
+Oversampling is applied to improve the characteristics near the Nyquist frequency. And, the settling time of the LPF is minimized to improve the measurement speed.  
 
 <img src="media/diagram-stepped_sweep.svg">  
 
