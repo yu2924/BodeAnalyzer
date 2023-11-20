@@ -56,6 +56,7 @@ public:
     virtual void progressiveSessionEnd(ProgressiveSessionBase*, const juce::Result&, bool) override;
     // internal
     void refrectProperties();
+    void onExportButtonClick();
     void onMethodButtonClick();
     void onAmplitudeEditChnage();
     void onLengthComboChange();
@@ -74,12 +75,12 @@ private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     juce::AudioDeviceManager* audioDeviceManager;
     AnalysisController::Ptr analysisController;
-    std::unique_ptr<juce::FileChooser> fileSaveDialog;
     double currentSampleRate;
     //[/UserVariables]
 
     //==============================================================================
     std::unique_ptr<juce::Label> titleLabel;
+    std::unique_ptr<juce::TextButton> exportButton;
     std::unique_ptr<Plot2dPane> irPlotPane;
     std::unique_ptr<juce::ToggleButton> methodImpButton;
     std::unique_ptr<juce::ToggleButton> methodLinSSButton;

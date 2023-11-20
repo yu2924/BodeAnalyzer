@@ -45,7 +45,11 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     titleLabel->setColour (juce::TextEditor::textColourId, juce::Colours::black);
     titleLabel->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
 
-    titleLabel->setBounds (8, 8, 96, 16);
+    titleLabel->setBounds (8, 8, 96, 24);
+
+    exportButton.reset (new juce::TextButton (juce::String()));
+    addAndMakeVisible (exportButton.get());
+    exportButton->setButtonText (TRANS("Export..."));
 
     irPlotPane.reset (new Plot2dPane());
     addAndMakeVisible (irPlotPane.get());
@@ -79,7 +83,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     amplitudeLabel->setColour (juce::TextEditor::textColourId, juce::Colours::black);
     amplitudeLabel->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
 
-    amplitudeLabel->setBounds (8, 128, 80, 24);
+    amplitudeLabel->setBounds (8, 136, 80, 24);
 
     amplitudeEdit.reset (new juce::Label (juce::String(),
                                           juce::String()));
@@ -93,7 +97,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     amplitudeEdit->setColour (juce::TextEditor::backgroundColourId, juce::Colours::white);
     amplitudeEdit->addListener (this);
 
-    amplitudeEdit->setBounds (88, 128, 64, 24);
+    amplitudeEdit->setBounds (88, 136, 64, 24);
 
     lengthLabel.reset (new juce::Label (juce::String(),
                                         TRANS("Length")));
@@ -104,7 +108,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     lengthLabel->setColour (juce::TextEditor::textColourId, juce::Colours::black);
     lengthLabel->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
 
-    lengthLabel->setBounds (160, 128, 64, 24);
+    lengthLabel->setBounds (160, 136, 64, 24);
 
     lengthCombo.reset (new juce::ComboBox (juce::String()));
     addAndMakeVisible (lengthCombo.get());
@@ -114,7 +118,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     lengthCombo->setTextWhenNoChoicesAvailable (TRANS("(no choices)"));
     lengthCombo->addListener (this);
 
-    lengthCombo->setBounds (224, 128, 80, 24);
+    lengthCombo->setBounds (224, 136, 80, 24);
 
     repeatCountLabel.reset (new juce::Label (juce::String(),
                                              TRANS("Repeat Count")));
@@ -125,7 +129,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     repeatCountLabel->setColour (juce::TextEditor::textColourId, juce::Colours::black);
     repeatCountLabel->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
 
-    repeatCountLabel->setBounds (312, 128, 96, 24);
+    repeatCountLabel->setBounds (312, 136, 96, 24);
 
     repeatCountEdit.reset (new juce::Label (juce::String(),
                                             juce::String()));
@@ -139,7 +143,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     repeatCountEdit->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
     repeatCountEdit->addListener (this);
 
-    repeatCountEdit->setBounds (408, 128, 64, 24);
+    repeatCountEdit->setBounds (408, 136, 64, 24);
 
     startButton.reset (new juce::TextButton (juce::String()));
     addAndMakeVisible (startButton.get());
@@ -150,6 +154,7 @@ StimulusForm::StimulusForm (juce::AudioDeviceManager* adm, AnalysisController* a
     irPlotPane->setAxes("Time (sec.)", { 0, 1 }, {}, false, nullptr,
                         "Amplitude", { -1, 1 }, { -1, 0, 1 }, false, nullptr);
     irPlotPane->adjustLabelBorder();
+    exportButton->onClick = [this]() { onExportButtonClick(); };
     methodImpButton->onClick = [this]() { onMethodButtonClick(); };
     methodLinSSButton->onClick = [this]() { onMethodButtonClick(); };
     methodLogSSButton->onClick = [this]() { onMethodButtonClick(); };
@@ -183,6 +188,7 @@ StimulusForm::~StimulusForm()
     //[/Destructor_pre]
 
     titleLabel = nullptr;
+    exportButton = nullptr;
     irPlotPane = nullptr;
     methodImpButton = nullptr;
     methodLinSSButton = nullptr;
@@ -221,12 +227,13 @@ void StimulusForm::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    irPlotPane->setBounds (8, 24, getWidth() - 120, 104);
-    methodImpButton->setBounds (getWidth() - 16 - 96, 24, 96, 24);
-    methodLinSSButton->setBounds (getWidth() - 16 - 96, 48, 96, 24);
-    methodLogSSButton->setBounds (getWidth() - 16 - 96, 72, 96, 24);
-    methodMLSButton->setBounds (getWidth() - 16 - 96, 96, 96, 24);
-    startButton->setBounds (getWidth() - 16 - 96, 128, 96, 24);
+    exportButton->setBounds (getWidth() - 16 - 96, 8, 96, 24);
+    irPlotPane->setBounds (8, 32, getWidth() - 120, 104);
+    methodImpButton->setBounds (getWidth() - 16 - 96, 32, 96, 24);
+    methodLinSSButton->setBounds (getWidth() - 16 - 96, 56, 96, 24);
+    methodLogSSButton->setBounds (getWidth() - 16 - 96, 80, 96, 24);
+    methodMLSButton->setBounds (getWidth() - 16 - 96, 104, 96, 24);
+    startButton->setBounds (getWidth() - 16 - 96, 136, 96, 24);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
@@ -332,6 +339,27 @@ void StimulusForm::refrectProperties()
     repeatCountEdit->setText(juce::String(params.repeatCount), juce::dontSendNotification);
 }
 
+void StimulusForm::onExportButtonClick()
+{
+    std::shared_ptr<juce::FileChooser> pfc = std::make_shared<juce::FileChooser>("Export Stimulus", juce::File(), "*.csv");
+    pfc->launchAsync(juce::FileBrowserComponent::FileChooserFlags::saveMode | juce::FileBrowserComponent::FileChooserFlags::warnAboutOverwriting, [this, pfc](const juce::FileChooser& fc)
+    {
+        juce::File path = fc.getResult();
+        if(path == juce::File()) return;
+        const std::vector<float>& stim = analysisController->getStimulus();
+        std::unique_ptr<juce::FileOutputStream> str = std::make_unique<juce::FileOutputStream>(path);
+        if(str->failedToOpen()) return;
+        str->setPosition(0);
+        str->truncate();
+        str->writeText("stimulus\r\n", false, false, nullptr);
+        for(size_t c = stim.size(), i = 0; i < c; ++i)
+        {
+            juce::String line = juce::String(stim[i]) + "\r\n";
+            str->write(line.toRawUTF8(), line.getNumBytesAsUTF8());
+        }
+    });
+}
+
 void StimulusForm::onMethodButtonClick()
 {
     irPlotPane->clearDataSources();
@@ -394,56 +422,59 @@ BEGIN_JUCER_METADATA
                  fixedSize="0" initialWidth="640" initialHeight="168">
   <BACKGROUND backgroundColour="ffffffff"/>
   <LABEL name="" id="cfb76c1374e76240" memberName="titleLabel" virtualName=""
-         explicitFocusOrder="0" pos="8 8 96 16" edTextCol="ff000000" edBkgCol="0"
+         explicitFocusOrder="0" pos="8 8 96 24" edTextCol="ff000000" edBkgCol="0"
          labelText="Stimulus" editableSingleClick="0" editableDoubleClick="0"
          focusDiscardsChanges="0" fontname="Default font" fontsize="15.0"
          kerning="0.0" bold="1" italic="0" justification="33" typefaceStyle="Bold"/>
+  <TEXTBUTTON name="" id="386d489f707f1787" memberName="exportButton" virtualName=""
+              explicitFocusOrder="0" pos="16Rr 8 96 24" buttonText="Export..."
+              connectedEdges="0" needsCallback="0" radioGroupId="0"/>
   <GENERICCOMPONENT name="" id="83ee5810795a7a2" memberName="irPlotPane" virtualName=""
-                    explicitFocusOrder="0" pos="8 24 120M 104" class="Plot2dPane"
+                    explicitFocusOrder="0" pos="8 32 120M 104" class="Plot2dPane"
                     params=""/>
   <TOGGLEBUTTON name="" id="7110fa476e68cdd" memberName="methodImpButton" virtualName=""
-                explicitFocusOrder="0" pos="16Rr 24 96 24" buttonText="Impulse"
+                explicitFocusOrder="0" pos="16Rr 32 96 24" buttonText="Impulse"
                 connectedEdges="0" needsCallback="0" radioGroupId="1" state="0"/>
   <TOGGLEBUTTON name="" id="ace919d0b87fc543" memberName="methodLinSSButton"
-                virtualName="" explicitFocusOrder="0" pos="16Rr 48 96 24" buttonText="Linear SS"
+                virtualName="" explicitFocusOrder="0" pos="16Rr 56 96 24" buttonText="Linear SS"
                 connectedEdges="0" needsCallback="0" radioGroupId="1" state="0"/>
   <TOGGLEBUTTON name="" id="8ad28d2b343dbe2a" memberName="methodLogSSButton"
-                virtualName="" explicitFocusOrder="0" pos="16Rr 72 96 24" buttonText="Log SS"
+                virtualName="" explicitFocusOrder="0" pos="16Rr 80 96 24" buttonText="Log SS"
                 connectedEdges="0" needsCallback="0" radioGroupId="1" state="0"/>
   <TOGGLEBUTTON name="" id="6832a27f58025163" memberName="methodMLSButton" virtualName=""
-                explicitFocusOrder="0" pos="16Rr 96 96 24" buttonText="MLS" connectedEdges="0"
-                needsCallback="0" radioGroupId="1" state="0"/>
+                explicitFocusOrder="0" pos="16Rr 104 96 24" buttonText="MLS"
+                connectedEdges="0" needsCallback="0" radioGroupId="1" state="0"/>
   <LABEL name="" id="117a0a7778f7a676" memberName="amplitudeLabel" virtualName=""
-         explicitFocusOrder="0" pos="8 128 80 24" edTextCol="ff000000"
+         explicitFocusOrder="0" pos="8 136 80 24" edTextCol="ff000000"
          edBkgCol="0" labelText="Amplitude&#10;" editableSingleClick="0"
          editableDoubleClick="0" focusDiscardsChanges="0" fontname="Default font"
          fontsize="15.0" kerning="0.0" bold="0" italic="0" justification="34"/>
   <LABEL name="" id="6abc02acefd85ab5" memberName="amplitudeEdit" virtualName=""
-         explicitFocusOrder="0" pos="88 128 64 24" bkgCol="ffffffff" outlineCol="ffdddddd"
+         explicitFocusOrder="0" pos="88 136 64 24" bkgCol="ffffffff" outlineCol="ffdddddd"
          edTextCol="ff000000" edBkgCol="ffffffff" labelText="" editableSingleClick="1"
          editableDoubleClick="1" focusDiscardsChanges="0" fontname="Default font"
          fontsize="15.0" kerning="0.0" bold="0" italic="0" justification="34"/>
   <LABEL name="" id="5c69a5c5bc76c089" memberName="lengthLabel" virtualName=""
-         explicitFocusOrder="0" pos="160 128 64 24" edTextCol="ff000000"
+         explicitFocusOrder="0" pos="160 136 64 24" edTextCol="ff000000"
          edBkgCol="0" labelText="Length" editableSingleClick="0" editableDoubleClick="0"
          focusDiscardsChanges="0" fontname="Default font" fontsize="15.0"
          kerning="0.0" bold="0" italic="0" justification="34"/>
   <COMBOBOX name="" id="f48bc0851be48abb" memberName="lengthCombo" virtualName=""
-            explicitFocusOrder="0" pos="224 128 80 24" editable="0" layout="33"
+            explicitFocusOrder="0" pos="224 136 80 24" editable="0" layout="33"
             items="" textWhenNonSelected="" textWhenNoItems="(no choices)"/>
   <LABEL name="" id="665de043b8f2a224" memberName="repeatCountLabel" virtualName=""
-         explicitFocusOrder="0" pos="312 128 96 24" edTextCol="ff000000"
+         explicitFocusOrder="0" pos="312 136 96 24" edTextCol="ff000000"
          edBkgCol="0" labelText="Repeat Count" editableSingleClick="0"
          editableDoubleClick="0" focusDiscardsChanges="0" fontname="Default font"
          fontsize="15.0" kerning="0.0" bold="0" italic="0" justification="34"/>
   <LABEL name="" id="f58a9627fbca840c" memberName="repeatCountEdit" virtualName=""
-         explicitFocusOrder="0" pos="408 128 64 24" bkgCol="ffffffff"
+         explicitFocusOrder="0" pos="408 136 64 24" bkgCol="ffffffff"
          outlineCol="ffdddddd" edTextCol="ff000000" edBkgCol="0" labelText=""
          editableSingleClick="1" editableDoubleClick="1" focusDiscardsChanges="0"
          fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
          italic="0" justification="34"/>
   <TEXTBUTTON name="" id="bd896244a95b0ca4" memberName="startButton" virtualName=""
-              explicitFocusOrder="0" pos="16Rr 128 96 24" buttonText="Start"
+              explicitFocusOrder="0" pos="16Rr 136 96 24" buttonText="Start"
               connectedEdges="0" needsCallback="0" radioGroupId="0"/>
 </JUCER_COMPONENT>
 

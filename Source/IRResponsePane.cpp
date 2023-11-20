@@ -48,8 +48,9 @@ namespace BAAPP
 			ResponsePane& owner;
 			AnalysisController::Ptr analysisController;
 			juce::Label titleLabel;
+			juce::TextButton exportButton;
 			juce::TabbedComponent tabbedContainer;
-			enum { Margin = 8, TitleHeight = 16 };
+			enum { Margin = 8, TitleHeight = 24, ButtonWidth = 96 };
 			Impl(ResponsePane& o, AnalysisController* ac)
 				: owner(o)
 				, analysisController(ac)
@@ -59,6 +60,9 @@ namespace BAAPP
 				owner.addAndMakeVisible(titleLabel);
 				titleLabel.setFont(juce::Font(15.00f, juce::Font::plain).withTypefaceStyle("Bold"));
 				titleLabel.setText("Response", juce::dontSendNotification);
+				owner.addAndMakeVisible(exportButton);
+				exportButton.setButtonText("Export...");
+				exportButton.onClick = [this]() { onClickExport(); };
 				owner.addAndMakeVisible(tabbedContainer);
 				MagPhasePlotPane* pane = new MagPhasePlotPane;
 				tabbedContainer.addTab("1", juce::Colours::white, pane, true, 0);
@@ -134,12 +138,52 @@ namespace BAAPP
 					if(i < cch) pane->setDataSourceBundle(new CDArrayDataSourceBundle(1, fs, &response.channelList[i].FR));
 				}
 			}
+			void onClickExport()
+			{
+				std::shared_ptr<juce::FileChooser> pfc = std::make_shared<juce::FileChooser>("Export", juce::File(), "*.csv");
+				pfc->launchAsync(juce::FileBrowserComponent::FileChooserFlags::saveMode | juce::FileBrowserComponent::FileChooserFlags::warnAboutOverwriting, [this, pfc](const juce::FileChooser& fc)
+				{
+					juce::File path = fc.getResult();
+					if(path == juce::File()) return;
+					const auto& resp = analysisController->getResponse();
+					int cch = (int)resp.channelList.size();
+					if(cch <= 0) return;
+					size_t len = resp.channelList.front().FR.size();
+					std::unique_ptr<juce::FileOutputStream> str = std::make_unique<juce::FileOutputStream>(path);
+					if(str->failedToOpen()) return;
+					str->setPosition(0);
+					str->truncate();
+					juce::StringArray sa;
+					sa.ensureStorageAllocated(2 * cch);
+					for(int ich = 0; ich < cch; ++ich)
+					{
+						sa.add(juce::String::formatted("response[%d].re", ich));
+						sa.add(juce::String::formatted("response[%d].im", ich));
+					}
+					juce::String hdr = sa.joinIntoString(",") + "\r\n";
+					str->write(hdr.toRawUTF8(), hdr.getNumBytesAsUTF8());
+					for(size_t c = len / 2, i = 0; i < c; ++i)
+					{
+						sa.clearQuick();
+						for(int ich = 0; ich < cch; ++ich)
+						{
+							const std::complex<double>& v = resp.channelList[ich].FR[i];
+							sa.add(juce::String(v.real()));
+							sa.add(juce::String(v.imag()));
+						}
+						juce::String line = sa.joinIntoString(",") + "\r\n";
+						str->write(line.toRawUTF8(), line.getNumBytesAsUTF8());
+					}
+				});
+			}
 			// --------------------------------------------------------------------------------
 			// juce::Component
 			void resized()
 			{
 				juce::Rectangle<int> rc = owner.getLocalBounds().reduced(Margin);
-				titleLabel.setBounds(rc.removeFromTop(TitleHeight));
+				juce::Rectangle<int> rchdr = rc.removeFromTop(TitleHeight);
+				exportButton.setBounds(rchdr.removeFromRight(ButtonWidth));
+				titleLabel.setBounds(rchdr);
 				tabbedContainer.setBounds(rc);
 			}
 			void paint(juce::Graphics& g)

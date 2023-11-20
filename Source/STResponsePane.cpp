@@ -47,8 +47,9 @@ namespace BAAPP
 			ResponsePane& owner;
 			AnalysisController::Ptr analysisController;
 			juce::Label titleLabel;
+			juce::TextButton exportButton;
 			juce::TabbedComponent tabbedContainer;
-			enum { Margin = 8, TitleHeight = 16 };
+			enum { Margin = 8, TitleHeight = 24, ButtonWidth = 96 };
 			Impl(ResponsePane& o, AnalysisController* ac)
 				: owner(o)
 				, analysisController(ac)
@@ -58,6 +59,9 @@ namespace BAAPP
 				owner.addAndMakeVisible(titleLabel);
 				titleLabel.setFont(juce::Font(15.00f, juce::Font::plain).withTypefaceStyle("Bold"));
 				titleLabel.setText("Response", juce::dontSendNotification);
+				owner.addAndMakeVisible(exportButton);
+				exportButton.setButtonText("Export...");
+				exportButton.onClick = [this]() { onClickExport(); };
 				owner.addAndMakeVisible(tabbedContainer);
 				MagPhasePlotPane* pane = new MagPhasePlotPane;
 				tabbedContainer.addTab("1", juce::Colours::white, pane, true, 0);
@@ -149,12 +153,54 @@ namespace BAAPP
 					if(i < cch) pane->setDataSourceBundle(new MPArrayDataSourceBundle(1, &response.channelList[i].pointList));
 				}
 			}
+			void onClickExport()
+			{
+				std::shared_ptr<juce::FileChooser> pfc = std::make_shared<juce::FileChooser>("Export", juce::File(), "*.csv");
+				pfc->launchAsync(juce::FileBrowserComponent::FileChooserFlags::saveMode | juce::FileBrowserComponent::FileChooserFlags::warnAboutOverwriting, [this, pfc](const juce::FileChooser& fc)
+				{
+					juce::File path = fc.getResult();
+					if(path == juce::File()) return;
+					const auto& resp = analysisController->getResponse();
+					int cch = (int)resp.channelList.size();
+					if(cch <= 0) return;
+					size_t len = resp.channelList.front().pointList.size();
+					std::unique_ptr<juce::FileOutputStream> str = std::make_unique<juce::FileOutputStream>(path);
+					if(str->failedToOpen()) return;
+					str->setPosition(0);
+					str->truncate();
+					juce::StringArray sa;
+					sa.ensureStorageAllocated(1 + 2 * cch);
+					sa.add("frequencyHz");
+					for(int ich = 0; ich < cch; ++ich)
+					{
+						sa.add(juce::String::formatted("response[%d].amplitude", ich));
+						sa.add(juce::String::formatted("response[%d].phaseDeg", ich));
+					}
+					juce::String hdr = sa.joinIntoString(",") + "\r\n";
+					str->write(hdr.toRawUTF8(), hdr.getNumBytesAsUTF8());
+					for(size_t i = 0; i < len; ++i)
+					{
+						sa.clearQuick();
+						sa.add(juce::String(resp.channelList[0].pointList[i].frequencyHz));
+						for(int ich = 0; ich < cch; ++ich)
+						{
+							auto mp = resp.channelList[0].pointList[i];
+							sa.add(juce::String(mp.amplitude));
+							sa.add(juce::String(mp.phaseDeg));
+						}
+						juce::String line = sa.joinIntoString(",") + "\r\n";
+						str->write(line.toRawUTF8(), line.getNumBytesAsUTF8());
+					}
+				});
+			}
 			// --------------------------------------------------------------------------------
 			// juce::Component
 			void resized()
 			{
 				juce::Rectangle<int> rc = owner.getLocalBounds().reduced(Margin);
-				titleLabel.setBounds(rc.removeFromTop(TitleHeight));
+				juce::Rectangle<int> rchdr = rc.removeFromTop(TitleHeight);
+				exportButton.setBounds(rchdr.removeFromRight(ButtonWidth));
+				titleLabel.setBounds(rchdr);
 				tabbedContainer.setBounds(rc);
 			}
 			void paint(juce::Graphics& g)
