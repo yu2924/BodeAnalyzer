@@ -141,3 +141,24 @@ The settling time of the LPF is minimized to improve the measurement speed. And,
 <img src="media/diagram-stepped_sweep.svg">  
 
 fig. Stepped Sweep Method processing flow diagram
+
+## Further Development...
+
+現在のところ更なる開発の予定は無いが、あると良さそうな改良点を追記する。
+Although there are no plans for further development at this time, I add some improvements that would be nice to have.
+
+- Calibration
+
+測定結果は使用したオーディオインターフェースの特性の影響を受ける。これを補正するためにはループバック特性を測定し、その逆関数をキャリブレーション特性とする。
+Measurement results are affected by the characteristics of the audio interface used. To compensate it, measure the loopback response and use the inverse function of it as calibration characteristics.
+
+<img src="media/audio-loopback.svg">  
+
+$$H_{Calib}(z)=\frac{1}{H_{Loopback}(z)}$$
+
+$$H_{Total}(z)=H_{Measure}(z)*H_{Calib}(z)$$
+
+- Variable plotting range and scale settings
+- Export as PDF
+
+etc etc
